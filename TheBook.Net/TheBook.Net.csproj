@@ -9,7 +9,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 	<CurrentDateTime>$([System.DateTime]::Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"))</CurrentDateTime>
 	<Platforms>AnyCPU;x64;x86</Platforms>
-	<SignAssembly>False</SignAssembly>
+	<SignAssembly>True</SignAssembly>
 	<AssemblyOriginatorKeyFile>d:\TheBook.Net\signature-files(keep private)\TheBook.Net\keypair.snk</AssemblyOriginatorKeyFile>
 	<BaseOutputPath></BaseOutputPath>
     <NoWarn>CA1416</NoWarn>

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RtfPipe.Model;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
@@ -488,10 +489,9 @@ namespace DiaryJournal.Net
         }
 
         // auto select db and find a node by id
-        public static myNode? DBFindLoadNode(OpenFSDBContext? ctx, Int64 id, ref String rtf, bool loadData = false, Int64 sectionId = 0)
+        public static myNode? DBFindLoadNode(OpenFSDBContext? ctx, Int64 id, ref String? rtf, ref byte[] xaml, bool loadData = false, Int64 sectionId = 0)
         {
-            byte[]? xamlbytesOut = null;
-            return OpenFileSystemDB.findLoadNode(ctx, sectionId, id, ref rtf, ref xamlbytesOut, loadData);
+            return OpenFileSystemDB.findLoadNode(ctx, sectionId, id, ref rtf, ref xaml, loadData);
         }
         // find a node by id
         public static myNode? DBFindLoadNodeOFSDB(OpenFSDBContext ctx, Int64 id, ref String rtf, bool loadData = false, Int64 sectionId = 0)
@@ -1013,6 +1013,30 @@ namespace DiaryJournal.Net
 
             return nodes;
         }
+
+        // export a node and all it's tree as documents like rtf, pdf, html, etc.
+        public static bool DBExportNodeTree(OpenFSDBContext? ctx, Int64 id, String path, EntryType OutputEntryType, FormOperation? formop = null)
+        {
+            // first export ancestor
+            RegisterItem? ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, id, true, false, false, false, true, true);
+            if (ancestor == null) return false;
+            entryMethods.exportEntry(ctx, ref ancestor.node, path, false, id, OutputEntryType);
+
+            while (true)
+            {
+                // load item from registry
+                RegisterItem? nextDescendant = ancestor.tree.Next(ancestor);
+                if (nextDescendant == null) break;
+                nextDescendant = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, nextDescendant.Id, true, false, false, false, true, true);
+                if (nextDescendant == null) return false;
+
+                // export this descendant node as document
+                entryMethods.exportEntry(ctx, ref nextDescendant.node, path, false, id, OutputEntryType);
+            }
+            return true;
+        }
+
+
         // this method exports a node to common exported human readable format document.
         // this method does not export importable set or file. non-importable document.
         public static bool exportEntry(OpenFSDBContext? ctx, ref myNode? node, String path, bool useCustomPathFileName,
@@ -1028,35 +1052,41 @@ namespace DiaryJournal.Net
             entryMethods.getEntryTypeFormats(OutputEntryType, ref ext, ref extComplete, ref extSearchPattern);
 
             // 1st load chapter's data blob
-            byte[]? xamlbytesOut = null;
-            String rtf = (String?)entryMethods.DBLoadNodeData(ctx, node.chapter.Id, node.DirectorySectionID);
+            byte[]? xaml = null;
+            String? rtf = "";
+            entryMethods.DBFindLoadNode(ctx, node.chapter.Id, ref rtf, ref xaml, true, node.DirectorySectionID);
+
+            if (ctx.dbEntryType == EntryType.Rtf)
+                xamlEntry.dummy.Rtf = rtf;
+            else
+                xamlEntry.dummy.XamlBytes = xaml;
 
             String fileData = "";
             byte[]? fileDataBytes = null;
             switch (OutputEntryType)
             {
                 case EntryType.Xml:
-                    fileData = xmlEntry.toXml(ref node.chapter, rtf, true);
+                    fileData = xmlEntry.toXml(ref node.chapter, xamlEntry.dummy.Rtf, true);
                     break;
 
                 case EntryType.Rtf:
-                    fileData = rtfEntry.toRtf(rtf);
+                    fileData = rtfEntry.toRtf(xamlEntry.dummy.Rtf);
                     break;
 
                 case EntryType.Html:
-                    fileData = htmlEntry.toHtml(rtf);
+                    fileData = htmlEntry.toHtml(xamlEntry.dummy.Rtf);
                     break;
 
                 case EntryType.Txt:
-                    fileData = txtEntry.toTxt(rtf);
+                    fileData = txtEntry.toTxt(xamlEntry.dummy.Rtf);
                     break;
 
                 case EntryType.Pdf:
-                    fileDataBytes = pdfEntry.toPDF(rtf);
+                    fileDataBytes = pdfEntry.toPDF(xamlEntry.dummy.Rtf);
                     break;
 
                 case EntryType.Xaml:
-                    fileDataBytes = xamlEntry.toXaml(rtf);
+                    fileDataBytes = xamlEntry.toXaml(xamlEntry.dummy.Rtf);
                     break;
 
                 default:

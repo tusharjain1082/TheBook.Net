@@ -174,9 +174,6 @@
   <metadata name="sfdFile.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>238, 55</value>
   </metadata>
-  <metadata name="bgWorkerExportEntries.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>1128, 20</value>
-  </metadata>
   <metadata name="pdlgRtbEntry.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>758, 13</value>
   </metadata>

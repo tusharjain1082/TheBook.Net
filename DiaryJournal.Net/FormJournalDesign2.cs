@@ -869,6 +869,9 @@ namespace DiaryJournal.Net
             else if (radCfgLCNode.Checked)
                 textboxPath.Text = dbCtx.dbConfig.latestCreatedEntry.ToString();
 
+            MessageBox.Show("warning: database is write locked. to write in it, please disable write lock in database manager form.", "warning",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                
             // operations status form
             this.Enabled = false;
             FormOperation? formOperation = null;
@@ -1451,7 +1454,28 @@ namespace DiaryJournal.Net
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
 
-            bgWorkerExportEntries.RunWorkerAsync(entryType);
+            if (!dbCtx.isDBOpen()) return;
+
+            // firstly save entry
+            __saveEntry();
+
+            this.Invoke(toggleForm, false);
+
+            // operations status form
+            FormOperation? formOperation = null;
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
+
+            foreach (ListViewItem lvItem in lvCurrentPath.CheckedItems)
+            {
+                if ((lvItem.SubItems[1].Text == @"\") || (lvItem.SubItems[1].Text == @".") || (lvItem.SubItems[1].Text == @"..")) continue;
+                entryMethods.DBExportNodeTree(dbCtx, (Int64)lvItem.Tag, browseFolder.SelectedPath, entryType, formOperation);
+            }
+
+            this.Invoke(toggleForm, true);
+            formOperation.close();
+
+            // update form
+            reloadPath("", false, currentPathItem);
         }
         private void tsbuttonStrikeout_Click(object sender, EventArgs e)
         {
@@ -2556,11 +2580,6 @@ namespace DiaryJournal.Net
 
             this.Invoke(showMessageBox, "total entries exported:" + exportIndex, "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
             */
-        }
-        private void bgWorkerExportEntries_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
-        {
-            EntryType entryType = (EntryType)e.Argument;
-            __exportEntries(entryType, true);
         }
 
         private void toolStripMenuItem8_Click(object sender, EventArgs e)

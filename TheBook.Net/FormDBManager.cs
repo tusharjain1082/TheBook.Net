@@ -201,6 +201,11 @@ namespace TheBook.Net
         {
             if (txtBoxDBPath.Text.Length == 0) return;
             if (dbCtx == null) return;
+            if (dbCtx.readOnly) return;
+            
+            if (MessageBox.Show("warning: are you sure you want to upgrade/fix this db? please save a backup copy somewhere first!", "warning",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
 
             // now reconfigure
 

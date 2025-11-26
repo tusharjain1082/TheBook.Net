@@ -254,6 +254,13 @@ namespace TheBook.Net.Core
             {
                 // empty slots system node does not exists so first create it.
 
+                if (ctx.readOnly)
+                {
+                    MessageBox.Show("warning: cannot create system nodes because database is write locked.", "warning",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
+
                 // this node does not exists in db, so auto create it
                 myNode newNode = new myNode(true);
                 newNode.chapter.Id = 1;
@@ -284,8 +291,11 @@ namespace TheBook.Net.Core
             emptySlots = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, emptySlots.Id, true, false, false, false, true, true);
 
             // we build a new empty slots register
-            if (rebuildEmptySlotsRegister)
-                Register.BuildEmptySlotsRegister(ctx, ctx.dbNodeTreeRegistryFile, emptySlots);
+            if (!ctx.readOnly)
+            {
+                if (rebuildEmptySlotsRegister)
+                    Register.BuildEmptySlotsRegister(ctx, ctx.dbNodeTreeRegistryFile, emptySlots);
+            }
 
             // reload empty slots system node
             emptySlots = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, emptySlots.Id, true, false, false, false, true, true);
@@ -323,6 +333,13 @@ namespace TheBook.Net.Core
                 newNode.chapter.creationDateTime = DateTime.Now;
                 newNode.chapter.modificationDateTime = DateTime.Now;
                 newNode.chapter.Title = systemNodeName;
+
+                if (ctx.readOnly)
+                {
+                    MessageBox.Show("warning: cannot create system nodes because database is write locked.", "warning",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return false;
+                }
 
                 // phase 3 insert this new system node directly into Register 
                 RegisterItem? item = Register.Insert(ctx, ctx.dbNodeTreeRegistryFile, 0, emptySlots, newNode, "", Array.Empty<byte>());

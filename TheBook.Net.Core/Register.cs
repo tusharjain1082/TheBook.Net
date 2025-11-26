@@ -1,16 +1,17 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using DiaryJournal.Net;
-using System.Windows.Documents;
-using System.Threading;
+﻿using DiaryJournal.Net;
+using Microsoft.Win32;
 using RtfPipe;
 using RtfPipe.Tokens;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Documents;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
-using Microsoft.Win32;
 
 namespace TheBook.Net.Core
 {
@@ -3556,19 +3557,23 @@ namespace TheBook.Net.Core
             return null;
         }
 
-        public RegisterItem? First()
+        public RegisterItem? First(RegisterItem? ancestor = null)
         {
             if (rootAncestor.treeHeadId == 0) return null;
-            Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current);
+            current = null;
+            current = Next(ancestor);
+            //Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current);
             return current;
         }
-        public RegisterItem? Last()
+        public RegisterItem? Last(RegisterItem? ancestor = null)
         {
             if (rootAncestor.treeTailId == 0) return null;
-            Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref current);
+            current = null;
+            current = Previous(ancestor);
+            //Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref current);
             return current;
         }
-        public RegisterItem? Next()
+        public RegisterItem? Next(RegisterItem? ancestor = null)
         {
             Int64 nextDescendantId = -1;
 
@@ -3591,19 +3596,40 @@ namespace TheBook.Net.Core
                 nextDescendantId = current.nextDescendantId;
             }
 
-            if (current == null)
-                return null; // there is no child node present so abort
-
-            // load item from registry
             RegisterItem? nextItem = null;
-            Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-            if (nextOffset < 0) return null; // critical error abort with null
+            while (true)
+            {
+                // load item from registry
+                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
+                if (nextOffset < 0) break; // no more nodes so break
+                if (ancestor != null)
+                {
+                    // an ancestor is passed check if this node is descendant
+                    // return ancestor's descendant
+                    if (IsDescendantOfAncestor(nextItem, ancestor))
+                    {
+                        // descendant of this ancestor found, so set and return it
+                        current = nextItem;
+                        return current;
+                    }
+                }
+                else
+                {
+                    // ancestor param is not passed so set and return this item
+                    // a next descendant is found so break and return it
+                    current = nextItem;
+                    return current;
+                }
 
-            // reconfigure current and set next item into it and return it as the next item in register
-            current = nextItem;
-            return current;
+                // configure
+                nextDescendantId = nextItem.nextDescendantId;
+
+                // check if end of register reached
+                if (nextItem.nextDescendantId == 0) break;
+            }
+            return null;
         }
-        public RegisterItem? Previous()
+        public RegisterItem? Previous(RegisterItem? ancestor = null)
         {
             Int64 prevDescendantId = -1;
 
@@ -3626,19 +3652,39 @@ namespace TheBook.Net.Core
                 prevDescendantId = current.previousDescendantId;
             }
 
-            if (current == null)
-                return null; // there is no child node present so abort
-
-            // load item from registry
             RegisterItem? prevItem = null;
-            Int64 prevOffset = Register.FindNode(ctx, registerFile, prevDescendantId, ref prevItem);
-            if (prevOffset < 0) return null; // critical error abort with null
+            while (true)
+            {
+                // load item from registry
+                Int64 prevOffset = Register.FindNode(ctx, registerFile, prevDescendantId, ref prevItem);
+                if (prevOffset < 0) return null; // critical error abort with null
+                if (ancestor != null)
+                {
+                    // an ancestor is passed check if this node is descendant
+                    // return ancestor's descendant
+                    if (IsDescendantOfAncestor(prevItem, ancestor))
+                    {
+                        // descendant of this ancestor found, so set and return it
+                        current = prevItem;
+                        return current;
+                    }
+                }
+                else
+                {
+                    // ancestor param is not passed so set and return this item
+                    // a previous descendant is found so break and return it
+                    current = prevItem;
+                    return current;
+                }
 
-            // reconfigure current and set prev item into it and return it as the prev item in register
-            current = prevItem;
-            return current;
+                // configure
+                prevDescendantId = prevItem.previousDescendantId;
+
+                // check if end of register reached
+                if (prevItem.previousDescendantId == 0) break;
+            }
+            return null;
         }
-
 
 
         public bool reloadConfig()

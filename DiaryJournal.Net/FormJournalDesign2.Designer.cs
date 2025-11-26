@@ -380,6 +380,7 @@
             toolStripSeparator25 = new ToolStripSeparator();
             findTotalEntriesInDatabaseToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem5 = new ToolStripMenuItem();
+            toolStripMenuItem3 = new ToolStripMenuItem();
             toolStripSeparator40 = new ToolStripSeparator();
             generateTestEntryToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator45 = new ToolStripSeparator();
@@ -488,12 +489,10 @@
             ofdFile = new OpenFileDialog();
             bgWorkerSearch = new System.ComponentModel.BackgroundWorker();
             sfdFile = new SaveFileDialog();
-            bgWorkerExportEntries = new System.ComponentModel.BackgroundWorker();
             pdlgRtbEntry = new PrintDialog();
             pdRtbEntry = new System.Drawing.Printing.PrintDocument();
             ppDlgRtbEntry = new PrintPreviewDialog();
             timerSetRtbEntry = new System.Windows.Forms.Timer(components);
-            toolStripMenuItem3 = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainerH).BeginInit();
             splitContainerH.Panel1.SuspendLayout();
             splitContainerH.Panel2.SuspendLayout();
@@ -2924,28 +2923,28 @@
             // 
             toolStripMenuItem7.Name = "toolStripMenuItem7";
             toolStripMenuItem7.Size = new Size(500, 22);
-            toolStripMenuItem7.Text = "export checked nodes tree set as html entries  (todo not implemented yet)";
+            toolStripMenuItem7.Text = "export checked nodes tree set as html entries ";
             toolStripMenuItem7.Click += toolStripMenuItem7_Click;
             // 
             // toolStripMenuItem8
             // 
             toolStripMenuItem8.Name = "toolStripMenuItem8";
             toolStripMenuItem8.Size = new Size(500, 22);
-            toolStripMenuItem8.Text = "export checked nodes tree set as txt entries  (todo not implemented yet)";
+            toolStripMenuItem8.Text = "export checked nodes tree set as txt entries";
             toolStripMenuItem8.Click += toolStripMenuItem8_Click;
             // 
             // toolStripMenuItem10
             // 
             toolStripMenuItem10.Name = "toolStripMenuItem10";
             toolStripMenuItem10.Size = new Size(500, 22);
-            toolStripMenuItem10.Text = "export checked nodes tree set as rtf entries  (todo not implemented yet)";
+            toolStripMenuItem10.Text = "export checked nodes tree set as rtf entries";
             toolStripMenuItem10.Click += toolStripMenuItem10_Click;
             // 
             // toolStripMenuItem34
             // 
             toolStripMenuItem34.Name = "toolStripMenuItem34";
             toolStripMenuItem34.Size = new Size(500, 22);
-            toolStripMenuItem34.Text = "export checked nodes tree set as pdf entries  (todo not implemented yet)";
+            toolStripMenuItem34.Text = "export checked nodes tree set as pdf entries";
             toolStripMenuItem34.Click += toolStripMenuItem34_Click;
             // 
             // toolStripMenuItem12
@@ -3501,6 +3500,13 @@
             toolStripMenuItem5.Size = new Size(238, 22);
             toolStripMenuItem5.Text = "descendant list of current node";
             toolStripMenuItem5.Click += toolStripMenuItem5_Click;
+            // 
+            // toolStripMenuItem3
+            // 
+            toolStripMenuItem3.Name = "toolStripMenuItem3";
+            toolStripMenuItem3.Size = new Size(238, 22);
+            toolStripMenuItem3.Text = "find and list orphaned nodes";
+            toolStripMenuItem3.Click += toolStripMenuItem3_Click;
             // 
             // toolStripSeparator40
             // 
@@ -4203,12 +4209,6 @@
             sfdFile.RestoreDirectory = true;
             sfdFile.Title = "save a file";
             // 
-            // bgWorkerExportEntries
-            // 
-            bgWorkerExportEntries.WorkerReportsProgress = true;
-            bgWorkerExportEntries.WorkerSupportsCancellation = true;
-            bgWorkerExportEntries.DoWork += bgWorkerExportEntries_DoWork;
-            // 
             // pdlgRtbEntry
             // 
             pdlgRtbEntry.AllowSelection = true;
@@ -4232,13 +4232,6 @@
             // 
             timerSetRtbEntry.Interval = 10;
             timerSetRtbEntry.Tick += timerSetRtbEntry_Tick;
-            // 
-            // toolStripMenuItem3
-            // 
-            toolStripMenuItem3.Name = "toolStripMenuItem3";
-            toolStripMenuItem3.Size = new Size(238, 22);
-            toolStripMenuItem3.Text = "find and list orphaned nodes";
-            toolStripMenuItem3.Click += toolStripMenuItem3_Click;
             // 
             // FormJournalDesign2
             // 
@@ -4544,7 +4537,6 @@
         private ToolStripMenuItem newLabelNodeToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem8;
         private ToolStripMenuItem toolStripMenuItem10;
-        private System.ComponentModel.BackgroundWorker bgWorkerExportEntries;
         private ToolStripSeparator toolStripSeparator9;
         private ToolStripMenuItem promoteNodeToolStripMenuItem;
         private ToolStripMenuItem moveNodeToRootToolStripMenuItem;
