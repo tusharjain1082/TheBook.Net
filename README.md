@@ -13,7 +13,7 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 you should frequently backup everything, the application along with the entire database which you use for writing. this is to ensure you always have a latest saved backup copy of your journal database and all it's mandatory config files in case anything goes wrong for example a hardware or software or database failure or corruption. 
 
 # security and privacy
-if you require security and privacy, you can keep this application and your writing database and everything in a bitlocker encrypted virtual hard disk or vhd file, or in any bitlocker encrypted drive or device.
+if you require security and privacy, you can keep this application and your writing database and everything in a bitlocker encrypted virtual hard disk or vhd file, or in any bitlocker encrypted drive or device. no further encryption or any other tight or multi-layered encryption is required because it is dangerous and very complicated as it makes everything complicated. so a simple bitlocker is enough for keeping your things private and secure.
 
 # your feedback
 I Tushar Jain am the sole developer and maintainer of TheBook.Net and it's source code. your feedback and rating is more important for this open source application and it's source code to persist, and for others to know and trust this application and it's worthiness. so please give star rating if you find this application to be worthy and eligible.
