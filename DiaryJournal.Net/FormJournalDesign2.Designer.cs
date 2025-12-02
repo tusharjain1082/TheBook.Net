@@ -217,13 +217,6 @@
             tabControlConfig = new TabControl();
             tabPageConfig1 = new TabPage();
             buttonResetConfig1 = new Button();
-            groupBox13 = new GroupBox();
-            label8 = new Label();
-            linkCfgTVEntriesFont = new LinkLabel();
-            label7 = new Label();
-            cmbCfgTVEntriesIndent = new ComboBox();
-            label1 = new Label();
-            cmbCfgTVEntriesItemHeight = new ComboBox();
             groupBox10 = new GroupBox();
             radCfgLCNode = new RadioButton();
             radCfgLMNode = new RadioButton();
@@ -377,13 +370,8 @@
             entryTitleToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem37 = new ToolStripMenuItem();
             toolStripSeparator19 = new ToolStripSeparator();
-            toolStripSeparator25 = new ToolStripSeparator();
-            findTotalEntriesInDatabaseToolStripMenuItem = new ToolStripMenuItem();
             toolStripMenuItem5 = new ToolStripMenuItem();
             toolStripMenuItem3 = new ToolStripMenuItem();
-            toolStripSeparator40 = new ToolStripSeparator();
-            generateTestEntryToolStripMenuItem = new ToolStripMenuItem();
-            toolStripSeparator45 = new ToolStripSeparator();
             toolStripSeparator48 = new ToolStripSeparator();
             newLabelNodeToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator9 = new ToolStripSeparator();
@@ -556,7 +544,6 @@
             tabPageConfig.SuspendLayout();
             tabControlConfig.SuspendLayout();
             tabPageConfig1.SuspendLayout();
-            groupBox13.SuspendLayout();
             groupBox10.SuspendLayout();
             tabPageViewEntry.SuspendLayout();
             menuTVEntries.SuspendLayout();
@@ -2330,7 +2317,6 @@
             // tabPageConfig1
             // 
             tabPageConfig1.Controls.Add(buttonResetConfig1);
-            tabPageConfig1.Controls.Add(groupBox13);
             tabPageConfig1.Controls.Add(groupBox10);
             tabPageConfig1.Controls.Add(label3);
             tabPageConfig1.Controls.Add(cmbCfgRtbViewEntryRM);
@@ -2353,75 +2339,6 @@
             buttonResetConfig1.Text = "reset";
             buttonResetConfig1.UseVisualStyleBackColor = true;
             buttonResetConfig1.Click += buttonResetConfig1_Click;
-            // 
-            // groupBox13
-            // 
-            groupBox13.Controls.Add(label8);
-            groupBox13.Controls.Add(linkCfgTVEntriesFont);
-            groupBox13.Controls.Add(label7);
-            groupBox13.Controls.Add(cmbCfgTVEntriesIndent);
-            groupBox13.Controls.Add(label1);
-            groupBox13.Controls.Add(cmbCfgTVEntriesItemHeight);
-            groupBox13.Location = new Point(504, 202);
-            groupBox13.Name = "groupBox13";
-            groupBox13.Size = new Size(482, 150);
-            groupBox13.TabIndex = 7;
-            groupBox13.TabStop = false;
-            groupBox13.Text = "configure primary journal tree view properties";
-            // 
-            // label8
-            // 
-            label8.Font = new Font("Segoe UI", 9.75F);
-            label8.Location = new Point(6, 90);
-            label8.Name = "label8";
-            label8.Size = new Size(76, 57);
-            label8.TabIndex = 10;
-            label8.Text = "font, style, and colors:";
-            // 
-            // linkCfgTVEntriesFont
-            // 
-            linkCfgTVEntriesFont.BorderStyle = BorderStyle.FixedSingle;
-            linkCfgTVEntriesFont.Location = new Point(88, 90);
-            linkCfgTVEntriesFont.Name = "linkCfgTVEntriesFont";
-            linkCfgTVEntriesFont.Size = new Size(388, 57);
-            linkCfgTVEntriesFont.TabIndex = 9;
-            linkCfgTVEntriesFont.TabStop = true;
-            linkCfgTVEntriesFont.Text = "n/a";
-            linkCfgTVEntriesFont.LinkClicked += linkCfgTVEntriesFont_LinkClicked;
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(6, 58);
-            label7.Name = "label7";
-            label7.Size = new Size(54, 20);
-            label7.TabIndex = 8;
-            label7.Text = "indent:";
-            // 
-            // cmbCfgTVEntriesIndent
-            // 
-            cmbCfgTVEntriesIndent.FormattingEnabled = true;
-            cmbCfgTVEntriesIndent.Location = new Point(194, 55);
-            cmbCfgTVEntriesIndent.Name = "cmbCfgTVEntriesIndent";
-            cmbCfgTVEntriesIndent.Size = new Size(150, 28);
-            cmbCfgTVEntriesIndent.TabIndex = 7;
-            // 
-            // label1
-            // 
-            label1.AutoSize = true;
-            label1.Location = new Point(6, 24);
-            label1.Name = "label1";
-            label1.Size = new Size(88, 20);
-            label1.TabIndex = 6;
-            label1.Text = "item height:";
-            // 
-            // cmbCfgTVEntriesItemHeight
-            // 
-            cmbCfgTVEntriesItemHeight.FormattingEnabled = true;
-            cmbCfgTVEntriesItemHeight.Location = new Point(194, 21);
-            cmbCfgTVEntriesItemHeight.Name = "cmbCfgTVEntriesItemHeight";
-            cmbCfgTVEntriesItemHeight.Size = new Size(150, 28);
-            cmbCfgTVEntriesItemHeight.TabIndex = 5;
             // 
             // groupBox10
             // 
@@ -3401,7 +3318,7 @@
             // 
             // entryToolStripMenuItem
             // 
-            entryToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newEntryToolStripMenuItem, newEntryNowToolStripMenuItem, toolStripMenuItem22, toolStripSeparator3, saveEntryToolStripMenuItem, toolStripMenuItem54, toolStripMenuItem4, toolStripSeparator4, entryTitleToolStripMenuItem, toolStripMenuItem37, toolStripSeparator19, toolStripSeparator25, findTotalEntriesInDatabaseToolStripMenuItem, toolStripMenuItem5, toolStripMenuItem3, toolStripSeparator40, generateTestEntryToolStripMenuItem, toolStripSeparator45, toolStripSeparator48, newLabelNodeToolStripMenuItem, toolStripSeparator9, promoteNodeToolStripMenuItem, moveNodeToRootToolStripMenuItem, toolStripMenuItem11, toolStripSeparator50, checkmarkAllNodesToolStripMenuItem, uncheckAllNodesToolStripMenuItem, toolStripSeparator74, recoverSavedEntryFromDbToolStripMenuItem, toolStripSeparator75, configureEntrysWidthToolStripMenuItem, toolStripSeparator77, convertEntryToRawTextToolStripMenuItem, toolStripSeparator78, cloneEntryToolStripMenuItem, cloneAtParentLevelToolStripMenuItem, toolStripMenuItem75, cloneToOtherLocationToolStripMenuItem, toolStripSeparator26 });
+            entryToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newEntryToolStripMenuItem, newEntryNowToolStripMenuItem, toolStripMenuItem22, toolStripSeparator3, saveEntryToolStripMenuItem, toolStripMenuItem54, toolStripMenuItem4, toolStripSeparator4, entryTitleToolStripMenuItem, toolStripMenuItem37, toolStripSeparator19, toolStripMenuItem5, toolStripMenuItem3, toolStripSeparator48, newLabelNodeToolStripMenuItem, toolStripSeparator9, promoteNodeToolStripMenuItem, moveNodeToRootToolStripMenuItem, toolStripMenuItem11, toolStripSeparator50, checkmarkAllNodesToolStripMenuItem, uncheckAllNodesToolStripMenuItem, toolStripSeparator74, recoverSavedEntryFromDbToolStripMenuItem, toolStripSeparator75, configureEntrysWidthToolStripMenuItem, toolStripSeparator77, convertEntryToRawTextToolStripMenuItem, toolStripSeparator78, cloneEntryToolStripMenuItem, cloneAtParentLevelToolStripMenuItem, toolStripMenuItem75, cloneToOtherLocationToolStripMenuItem, toolStripSeparator26 });
             entryToolStripMenuItem.Name = "entryToolStripMenuItem";
             entryToolStripMenuItem.Size = new Size(46, 23);
             entryToolStripMenuItem.Text = "E&ntry";
@@ -3482,18 +3399,6 @@
             toolStripSeparator19.Name = "toolStripSeparator19";
             toolStripSeparator19.Size = new Size(235, 6);
             // 
-            // toolStripSeparator25
-            // 
-            toolStripSeparator25.Name = "toolStripSeparator25";
-            toolStripSeparator25.Size = new Size(235, 6);
-            // 
-            // findTotalEntriesInDatabaseToolStripMenuItem
-            // 
-            findTotalEntriesInDatabaseToolStripMenuItem.Name = "findTotalEntriesInDatabaseToolStripMenuItem";
-            findTotalEntriesInDatabaseToolStripMenuItem.Size = new Size(238, 22);
-            findTotalEntriesInDatabaseToolStripMenuItem.Text = "find total entries in database";
-            findTotalEntriesInDatabaseToolStripMenuItem.Click += findTotalEntriesInDatabaseToolStripMenuItem_Click;
-            // 
             // toolStripMenuItem5
             // 
             toolStripMenuItem5.Name = "toolStripMenuItem5";
@@ -3507,23 +3412,6 @@
             toolStripMenuItem3.Size = new Size(238, 22);
             toolStripMenuItem3.Text = "find and list orphaned nodes";
             toolStripMenuItem3.Click += toolStripMenuItem3_Click;
-            // 
-            // toolStripSeparator40
-            // 
-            toolStripSeparator40.Name = "toolStripSeparator40";
-            toolStripSeparator40.Size = new Size(235, 6);
-            // 
-            // generateTestEntryToolStripMenuItem
-            // 
-            generateTestEntryToolStripMenuItem.Name = "generateTestEntryToolStripMenuItem";
-            generateTestEntryToolStripMenuItem.Size = new Size(238, 22);
-            generateTestEntryToolStripMenuItem.Text = "generate random";
-            generateTestEntryToolStripMenuItem.Click += generateTestEntryToolStripMenuItem_Click;
-            // 
-            // toolStripSeparator45
-            // 
-            toolStripSeparator45.Name = "toolStripSeparator45";
-            toolStripSeparator45.Size = new Size(235, 6);
             // 
             // toolStripSeparator48
             // 
@@ -4330,8 +4218,6 @@
             tabControlConfig.ResumeLayout(false);
             tabPageConfig1.ResumeLayout(false);
             tabPageConfig1.PerformLayout();
-            groupBox13.ResumeLayout(false);
-            groupBox13.PerformLayout();
             groupBox10.ResumeLayout(false);
             groupBox10.PerformLayout();
             tabPageViewEntry.ResumeLayout(false);
@@ -4459,8 +4345,6 @@
         private ToolStripButton tsbuttonUndo;
         private ToolStripButton tsbuttonRedo;
         private ToolStripButton tsbuttonRestore;
-        private ToolStripSeparator toolStripSeparator25;
-        private ToolStripMenuItem findTotalEntriesInDatabaseToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem21;
         private ToolStripSeparator toolStripSeparator31;
         private ToolStripButton tsbuttonDeleteEntry;
@@ -4513,8 +4397,6 @@
         private ToolStripSeparator toolStripSeparator39;
         private ToolStripMenuItem selectAllToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem23;
-        private ToolStripSeparator toolStripSeparator40;
-        private ToolStripMenuItem generateTestEntryToolStripMenuItem;
         private TabPage tabPageViewEntry;
         private ToolStripSeparator toolStripSeparator41;
         private ToolStripMenuItem decreaseFontSizeToolStripMenuItem;
@@ -4530,7 +4412,6 @@
         private DateTimePicker dtpickerSearchFromTime;
         private ToolStripMenuItem fullScreenToolStripMenuItem;
         private Button buttonSearchResetDates;
-        private ToolStripSeparator toolStripSeparator45;
         private CheckBox chkSearchReplaceTitle;
         private ToolStripSeparator toolStripSeparator46;
         private ToolStripSeparator toolStripSeparator48;
@@ -4714,13 +4595,6 @@
         private ToolStripMenuItem cloneAtParentLevelToolStripMenuItem;
         private ToolStripMenuItem cloneToOtherLocationToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem75;
-        private GroupBox groupBox13;
-        private Label label1;
-        private ComboBox cmbCfgTVEntriesItemHeight;
-        private Label label7;
-        private ComboBox cmbCfgTVEntriesIndent;
-        private Label label8;
-        private LinkLabel linkCfgTVEntriesFont;
         private Button buttonResetConfig1;
         private ToolStripSeparator toolStripSeparator80;
         private ToolStripMenuItem gotoLatestEntryToolStripMenuItem;

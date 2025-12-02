@@ -203,7 +203,7 @@ namespace DiaryJournal.Net
             if (locations.Count == 0) 
             {
                 // no location provided, so load root's children as worklist and traverse each tree
-                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, true, false, true, false);
+                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, true, false, true, true);
                 if (root == null) return false; // error abort
                 foreach (RegisterItem? item in root.childrenList)
                     worklist.Add(item.Id);
@@ -214,6 +214,7 @@ namespace DiaryJournal.Net
             }
             else
             {
+                /* todo 02 December 2025
                 // prepare counter and progress
                 foreach (Int64 id in worklist)
                 {
@@ -222,6 +223,7 @@ namespace DiaryJournal.Net
                     total += thisItem.tree.CountDescendants(thisItem);
                     total += 1; // increment this current item
                 }
+                */
             }
 
             // initialize a single regex for all operations
@@ -434,7 +436,7 @@ namespace DiaryJournal.Net
                     RegisterItem? nextDescendant = thisItem.tree.Next();
                     if (nextDescendant == null) break;
 
-                    if (!thisItem.tree.IsDescendantOfAncestor(nextDescendant, thisItem))
+                    if (!Register.IsDescendantOfAncestor(ctx, ctx.dbNodeTreeRegistryFile, nextDescendant, thisItem))
                         continue; // this descendant is not true descendant of current item so skip
 
                     // this descendant is true descendant of current location item so process it

@@ -132,6 +132,9 @@ namespace TheBook.Net
             if (txtBoxDBPath.Text.Length == 0) return;
             if (dbCtx == null) return;
 
+            // reload empty slots system node
+            //RegisterItem? root = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, 0, true, false, true, false, true, true, true);
+
             // setup and launch journal
             if (journalForm == null)
             {

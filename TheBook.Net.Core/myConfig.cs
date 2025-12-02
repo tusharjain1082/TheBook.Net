@@ -24,17 +24,6 @@ namespace DiaryJournal.Net
 
         public const int defaultDocumentWidth = 800;
 
-        public int tvEntriesItemHeight = 20;
-        public static int default_tvEntriesItemHeight = 20;
-        public int tvEntriesIndent = 20;
-        public static int default_tvEntriesIndent = 20;
-        public Font? tvEntriesFont = new System.Drawing.Font("Arial", 10, FontStyle.Regular);
-        public static Font default_tvEntriesFont = new System.Drawing.Font("Arial", 10, FontStyle.Regular);
-        public Color tvEntriesBackColor = Color.White;
-        public Color tvEntriesForeColor = Color.Black;
-        public static Color default_tvEntriesBackColor = Color.White;
-        public static Color default_tvEntriesForeColor = Color.Black;
-
         public TemplateFormat templateFormat = new TemplateFormat();
 
         public void close()
@@ -79,22 +68,11 @@ namespace DiaryJournal.Net
                 Section config1V1000 = new Section("Config1Version1.0.0.0");
 
                 // prepare default config wherever required
-                if (cfg.tvEntriesItemHeight <= 0) cfg.tvEntriesItemHeight = myConfig.default_tvEntriesItemHeight;
-                if (cfg.tvEntriesIndent <= 0) cfg.tvEntriesIndent = myConfig.default_tvEntriesIndent;
-                if (cfg.tvEntriesFont == null) cfg.tvEntriesFont = myConfig.default_tvEntriesFont;
-                if (cfg.tvEntriesBackColor == Color.Empty) cfg.tvEntriesBackColor = myConfig.default_tvEntriesBackColor;
-                if (cfg.tvEntriesForeColor == Color.Empty) cfg.tvEntriesForeColor = myConfig.default_tvEntriesForeColor;
-
                 config1V1000.Add(new Setting("chkCfgAutoLoadCreateDefaultDB", cfg.chkCfgAutoLoadCreateDefaultDB));
                 config1V1000.Add(new Setting("cmbCfgRtbViewEntryRMValue", cfg.cmbCfgRtbViewEntryRMValue));
                 config1V1000.Add(new Setting("radCfgLMNode", cfg.radCfgLMNode));
                 config1V1000.Add(new Setting("radCfgLCNode", cfg.radCfgLCNode));
                 config1V1000.Add(new Setting("radCfgTCNode", cfg.radCfgTCNode));
-                config1V1000.Add(new Setting("tvEntriesItemHeight", cfg.tvEntriesItemHeight));
-                config1V1000.Add(new Setting("tvEntriesIndent", cfg.tvEntriesIndent));
-                config1V1000.Add(new Setting("tvEntriesFont", myCommonMethods1.FontToString(cfg.tvEntriesFont)));
-                config1V1000.Add(new Setting("tvEntriesBackColor", myCommonMethods1.ColorToString(cfg.tvEntriesBackColor)));
-                config1V1000.Add(new Setting("tvEntriesForeColor", myCommonMethods1.ColorToString(cfg.tvEntriesForeColor)));
 
                 config.Add(config1V1000);
                 config.SaveToFile(file);
@@ -124,19 +102,7 @@ namespace DiaryJournal.Net
                 cfg.radCfgLMNode = config1V1000["radCfgLMNode"].BoolValue;
                 cfg.radCfgLCNode = config1V1000["radCfgLCNode"].BoolValue;
                 cfg.radCfgTCNode = config1V1000["radCfgTCNode"].BoolValue;
-                cfg.tvEntriesItemHeight = config1V1000["tvEntriesItemHeight"].IntValue;
-                cfg.tvEntriesIndent = config1V1000["tvEntriesIndent"].IntValue;
-                cfg.tvEntriesFont =  myCommonMethods1.StringToFont(config1V1000["tvEntriesFont"].StringValue);
-                cfg.tvEntriesBackColor = myCommonMethods1.StringToColor(config1V1000["tvEntriesBackColor"].StringValue);
-                cfg.tvEntriesForeColor = myCommonMethods1.StringToColor(config1V1000["tvEntriesForeColor"].StringValue);
                 cfg.configFilePath = file;
-
-                if (cfg.tvEntriesItemHeight <= 0) cfg.tvEntriesItemHeight = myConfig.default_tvEntriesItemHeight;
-                if (cfg.tvEntriesIndent <= 0) cfg.tvEntriesIndent = myConfig.default_tvEntriesIndent;
-                if (cfg.tvEntriesFont == null) cfg.tvEntriesFont = myConfig.default_tvEntriesFont;
-                if (cfg.tvEntriesBackColor == Color.Empty) cfg.tvEntriesBackColor = myConfig.default_tvEntriesBackColor;
-                if (cfg.tvEntriesForeColor == Color.Empty) cfg.tvEntriesForeColor = myConfig.default_tvEntriesForeColor;
-
 
                 return true;
             }

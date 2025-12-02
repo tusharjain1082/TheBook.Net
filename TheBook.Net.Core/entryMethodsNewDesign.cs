@@ -277,8 +277,24 @@ namespace TheBook.Net.Core
                 if (!OpenFileSystemDB.createNode(ctx, newNode, "", xamlbytes, true, true, true, false))
                     return false; // critical error
 
-                // create directly into Register 
-                emptySlots = root.children.Add(newNode, ref root);
+                // first add to parent's tree sequence register
+                RegisterItem? item = root.tree.Add(newNode);
+                if (item == null) return false;
+                Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, item.Id, ref item);
+                root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, true, false, false, false, true, true);
+
+                // insert in children Register 
+                root.children.Add(item);
+                
+                // reload and setup
+                emptySlots = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.Id, true, false, false, false, true, true);
+
+                // change in root
+                root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, true, false, false, false, true, true);
+                root.usedSlots += 1;
+                Register.UpdateNode(ctx, ctx.dbNodeTreeRegistryFile, root, 0, false, 0, false, 0, false);
+                root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, true, false, false, false, true, true);
+
                 if (emptySlots == null) return false;
             }
             else
@@ -345,6 +361,7 @@ namespace TheBook.Net.Core
                 RegisterItem? item = Register.Insert(ctx, ctx.dbNodeTreeRegistryFile, 0, emptySlots, newNode, "", Array.Empty<byte>());
                 if (item == null) return false; // critical error while creating new system node abort with error
             }
+            root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, true, false, false, false, true, true);
             return true;
         }
         // load node from registry item
@@ -352,7 +369,7 @@ namespace TheBook.Net.Core
             RegisterItem item, ref String rtfOut, bool loadData, ref myNode? nodeOut, ref byte[]? xamlbytesOut)
         {
             String rtf = "";
-            myNode? node = OpenFileSystemDB.findLoadNode(ctx, item.DirectorySectionId, item.Id, ref rtf, ref xamlbytesOut, loadData);
+            myNode? node = OpenFileSystemDB.findLoadNode(ctx, item.sectionId, item.Id, ref rtf, ref xamlbytesOut, loadData);
             if (node == null) return false;
 
             // node found and loaded, return it
@@ -444,50 +461,7 @@ namespace TheBook.Net.Core
                 }
             }
 
-            // phase 2 - configure descendant lineage tree configuration in all applicable nodes
-
-            // iterate through all sections
-            index = 0;
-            foreach (OpenFSDBSection section in ctx.dbSections.sections)
-            {
-                List<myNode> list = new List<myNode>();
-                if (!OpenFileSystemDB.findSectionNodes(ctx, section.sectionId, ref list)) continue;
-                // iterate and process all entries in this section
-                foreach (myNode? node in list)
-                {
-                    if (node.chapter.Id == 0) continue; // root is skipped
-
-                    // this is not root but parent and or child node, so load both current item and it's parent and insert the item into their registers.
-                    RegisterItem? item = null;
-                    Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
-                    if (item == null) return false; // critical error abort operations
-
-                    // get top root ancestor of this node
-                    //List<RegisterItem>? lineage = null;
-                    //Register.Lineage(ctx, ctx.dbCtx.dbNodeTreeRegistryFile, item, ref lineage, true, false, false);
-                    //RegisterItem? rootAncestor = lineage.FirstOrDefault();
-                    RegisterItem? rootAncestor = null;
-                    //if (rootAncestor != null)
-                    if (Register.LineageRootAncestor(ctx, ctx.dbNodeTreeRegistryFile, item, ref rootAncestor, false, false))
-                    {
-                        // root ancestor found, this means this node is local tree child node and has a valid root ancestor, so configure root ancestor
-                        // configure root Ancestor
-                        item.treeRootId = rootAncestor.Id;
-                        // write register item into register by item id
-                        if (!Register.UpdateNode(ctx, ctx.dbNodeTreeRegistryFile, item, 0, false, 0, false, 0, false))
-                            return false; // critical error, we cannot proceed further, abort with error
-                    }
-                }
-                index += list.Count;
-                //totalValid += list.Count;
-                if (formop != null)
-                {
-                    formop.updateProgressBar(index, total);
-                    formop.updateFilesStatus(index, total);
-                }
-            }
-
-            // phase 3 - build both registers children register and lineage tree register
+            // phase 2 - build both registers children register and lineage tree register
 
             // iterate all valid slots by their valid nodes files which exist in sections of the db
             // iterate through all sections
@@ -496,8 +470,10 @@ namespace TheBook.Net.Core
             {
                 List<myNode> list = new List<myNode>();
                 if (!OpenFileSystemDB.findSectionNodes(ctx, section.sectionId, ref list)) continue;
+                List<myNode> sorted = list.OrderBy(x => x.chapter.Id).ToList();
+
                 // iterate and process all entries in this section
-                foreach (myNode? node in list)
+                foreach (myNode? node in sorted)
                 {
                     if (node.chapter.Id == 0) continue; // root is skipped
 
@@ -505,29 +481,18 @@ namespace TheBook.Net.Core
                     RegisterItem? item = null;
                     Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
                     if (item == null) return false; // critical error abort operations
-
                     RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
                     if (parent == null) return false; // critical error abort operations
 
                     // now add the item into parent's both registers
 
-                    // add to children's register
-                    if (!parent.children.Add(item, parent)) return false; // critical error abort operations
-
-                    // reload latest states
+                    // first add to tree sequence of parent
+                    parent.tree.Add(item);
                     Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
-                    if (item == null) return false; // critical error abort operations
                     parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-                    if (parent == null) return false; // critical error abort operations
 
-                    // add to root ancestor's tree lineage register
-                    if (parent.Id != 0)
-                    {
-                        // if parent is not root then it's a root ancestor or a local tree child node, so in both cases we autoadd to root ancestor only.
-                        // we cannot add to root itself there is no lineage tree register in root 0.
-                        if (!parent.tree.Add(item))
-                            return false; // critical error abort operations
-                    }
+                    // 2nd add to children's register
+                    if (!parent.children.Add(item)) return false; // critical error abort operations
                 }
 
                 // update                

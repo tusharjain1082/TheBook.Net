@@ -110,7 +110,7 @@ namespace DiaryJournal.Net
             // finally update the register add this node
             RegisterItem? rootItem = new RegisterItem(0, root.chapter.Id,
             root.chapter.parentId, root.DirectorySectionID, 0, 0, 0, 0, 0, root.chapter.nodeType, root.chapter.specialNodeType, root.chapter.domainType,
-            RegisterItemFlags1.None, 0, 0, 0, 0, 0, 0);
+            RegisterItemFlags1.None, 0, 0, 0);
 
             if (Register.InsertNode(ctx, ctx.dbNodeTreeRegistryFile, rootItem) < 0)
                 return false; // critical error
@@ -332,7 +332,7 @@ namespace DiaryJournal.Net
 
             // first get the total number of chapters which exist in db
             long total = Register.CountValidEntries(src, src.dbNodeTreeRegistryFile);
-            long index = 1;
+            long index = 0;
 
             // first replicate initial db and config
             OpenFSDBContext? ctx = PrepareInitialCloneDB(src, destBasePath);

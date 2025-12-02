@@ -415,6 +415,8 @@ namespace DiaryJournal.Net
             // get item
             RegisterItem? item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, id, true, false, false, false, false, false);
             if (item == null) return false;
+            RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
+            if (parent == null) return false;
 
             if (item.node == null)
                 return false; // error node not found
@@ -441,7 +443,7 @@ namespace DiaryJournal.Net
                 return false;
 
             // move
-            return Register.Move(ctx, ctx.dbNodeTreeRegistryFile, item.Id, destId);
+            return parent.children.Move(item, dest);
         }
 
         // this method sets or unsets a parent for a target node by guid
@@ -1025,7 +1027,7 @@ namespace DiaryJournal.Net
             while (true)
             {
                 // load item from registry
-                RegisterItem? nextDescendant = ancestor.tree.Next(ancestor);
+                RegisterItem? nextDescendant = ancestor.tree.Next();
                 if (nextDescendant == null) break;
                 nextDescendant = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, nextDescendant.Id, true, false, false, false, true, true);
                 if (nextDescendant == null) return false;
@@ -2233,7 +2235,7 @@ namespace DiaryJournal.Net
             long index = 0;
 
             // first get the latest state of root register by id
-            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, false);
+            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
             if (root == null) return false;
 
             // change root
@@ -2258,10 +2260,8 @@ namespace DiaryJournal.Net
             while (true)
             {
                 // load item from registry
-                RegisterItem? nextItem = root.children.Next();
+                RegisterItem? nextItem = root.tree.Next();
                 if (nextItem == null) break;
-
-                // change current root ancestor
 
                 rtf = "";
                 xamlbytes = null;
@@ -2280,35 +2280,6 @@ namespace DiaryJournal.Net
                     formop.updateProgressBar(index, total);
                     formop.updateFilesStatus(index, total);
                 }
-
-                // process all descendants of this item
-                nextItem.InitializeSystem(ctx, ctx.dbNodeTreeRegistryFile, true, true);
-
-                while (true)
-                {
-                    // load item from registry
-                    RegisterItem? nextDescendant = nextItem.tree.Next();
-                    if (nextDescendant == null) break;
-
-					rtf = "";
-					xamlbytes = null;
-					nextDescendant.loadNode(ctx, ref rtf, ref xamlbytes, true);
-					if (ctx.dbEntryType == EntryType.Xaml)
-						xamlEntry.dummy.XamlBytes = xamlbytes;
-					else
-						xamlEntry.dummy.Rtf = rtf;
-
-					xamlEntry.dummy.Text = xamlEntry.dummy.Text;
-					entryMethods.DBUpdateNodeOFSDB(ctx, nextDescendant.node, xamlEntry.dummy.Rtf, xamlEntry.dummy.XamlBytes, true, false, false);
-
-                    index++;
-                    if (formop != null)
-                    {
-                        formop.updateProgressBar(index, total);
-                        formop.updateFilesStatus(index, total);
-                    }
-                }
-
             }
 
             processed = index;
@@ -2325,7 +2296,7 @@ namespace DiaryJournal.Net
             long index = 0;
 
             // first get the latest state of root register by id
-            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, false);
+            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
             if (root == null) return false;
 
             // change root
@@ -2351,10 +2322,10 @@ namespace DiaryJournal.Net
             while (true)
             {
                 // load item from registry
-                RegisterItem? nextItem = root.children.Next();
+                RegisterItem? nextItem = root.tree.Next();
                 if (nextItem == null) break;
 
-				// change current root ancestor
+				// change current item
 
 				rtf = "";
 				xamlbytes = null;
@@ -2374,38 +2345,8 @@ namespace DiaryJournal.Net
                     formop.updateProgressBar(index, total);
                     formop.updateFilesStatus(index, total);
                 }
-
-                // process all descendants of this item
-                nextItem.InitializeSystem(ctx, ctx.dbNodeTreeRegistryFile, true, true);
-
-                while (true)
-                {
-                    // load item from registry
-                    RegisterItem? nextDescendant = nextItem.tree.Next();
-                    if (nextDescendant == null) break;
-
-					rtf = "";
-					xamlbytes = null;
-					nextDescendant.loadNode(ctx, ref rtf, ref xamlbytes, true);
-
-					if (fromRtfToXaml)
-						xamlbytes = xamlEntry.toXaml(rtf);
-					else
-						rtf = xamlEntry.toRtf(xamlbytes);
-
-					entryMethods.DBPurgeNodeOFSDB(ctx, nextDescendant.node, false, true);
-					entryMethods.DBUpdateNodeOFSDB(ctx, nextDescendant.node, rtf, xamlbytes, true, false, false,
-                        ((fromRtfToXaml) ? EntryType.Xaml : EntryType.Rtf));
-
-                    index++;
-                    if (formop != null)
-                    {
-                        formop.updateProgressBar(index, total);
-                        formop.updateFilesStatus(index, total);
-                    }
-                }
-
             }
+            
             if (fromRtfToXaml)
             {
                 ctx.isXamlDB = true;

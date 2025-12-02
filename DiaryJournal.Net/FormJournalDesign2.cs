@@ -1,38 +1,36 @@
 #define UNICODE
 
-using System.IO;
-using System.Windows.Forms;
-using System.Text;
-using System.Drawing;
-using System.Text.RegularExpressions;
-using System;
-using RtfPipe.Tokens;
-//using MigraDoc.DocumentObjectModel;
-//using PdfSharp.Drawing.BarCodes;
-using System.Data;
-using System.Reflection;
-using System.Net;
-using RtfPipe.Model;
-using System.Drawing.Printing;
-using System.Collections.Generic;
-using System.Windows.Forms.Integration;
-//using Net.Sgoliver.NRtfTree.Core;
-using System.Windows.Documents;
-using System.Windows.Shapes;
-using static DiaryJournal.Net.FindReplaceFramework;
-using System.Xml.Linq;
+using AngleSharp.Dom;
+using HtmlAgilityPack;
+using MarkupConverter;
 using MigraDoc.DocumentObjectModel.Tables;
-using System.Web;
+using PdfSharp.Drawing;
+using RtfPipe;
+using RtfPipe.Model;
+using RtfPipe.Tokens;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Drawing;
+using System.Drawing.Printing;
+using System.IO;
+using System.IO.MemoryMappedFiles;
+using System.Net;
+using System.Reflection;
 using System.Reflection.Metadata;
 using System.Security.Policy;
-using MarkupConverter;
-using HtmlAgilityPack;
-using TheBook.Net.Core;
-using System.IO.MemoryMappedFiles;
-using static System.Windows.Forms.DataFormats;
-using AngleSharp.Dom;
-using RtfPipe;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Web;
+using System.Windows.Documents;
+using System.Windows.Forms;
+using System.Windows.Forms.Integration;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
+using System.Xml.Linq;
+using TheBook.Net.Core;
+using static DiaryJournal.Net.FindReplaceFramework;
+using static System.Windows.Forms.DataFormats;
 
 namespace DiaryJournal.Net
 {
@@ -57,7 +55,6 @@ namespace DiaryJournal.Net
         public String xamlState = "";
         public String previousXamlState = "";
         public FormFind? myFormFind = null;
-        public MemoryMappedFile? sharedEntry = null;
 
         // TheBook.Net
         public OpenFSDBContext? dbCtx = null;
@@ -73,8 +70,6 @@ namespace DiaryJournal.Net
         public RegisterItem? currentPathItem = null;
         public RegisterItem? emptySlotsItem = null;
 
-        //      CoreManaged.CoreManaged cppCore = new CoreManaged.CoreManaged();
-
         public myConfig cfg = new myConfig();
 
         System.Windows.Controls.WpfRichTextBoxEx rtbEntry = new System.Windows.Controls.WpfRichTextBoxEx();
@@ -82,10 +77,6 @@ namespace DiaryJournal.Net
         //        System.Windows.Controls.Viewbox viewboxPrimary = new System.Windows.Controls.Viewbox();
         ElementHost host1 = new ElementHost();
         ElementHost host2 = new ElementHost();
-
-
-        // TreeView drag and drop config
-        TreeNode? targetDDNode = null;
 
         // delegates
         public delegate void __toggleFormDelegate(bool toggle);
@@ -179,13 +170,6 @@ namespace DiaryJournal.Net
             gotoEntryByAttribute = new __gotoEntryByAttributeDelegate(__gotoEntryByAttribute);
             processSearch = new __processSearchDelegate(__processSearch);
 
-            // setup config ui
-            for (int itemHeight = 16; itemHeight <= 60; itemHeight++)
-                cmbCfgTVEntriesItemHeight.Items.Add(itemHeight);
-
-            for (int indent = 16; indent <= 60; indent++)
-                cmbCfgTVEntriesIndent.Items.Add(indent);
-
             // now load config file and setup
             dbCtx.config = cfg;
             myConfigMethods.autoCreateLoadConfigFile(ref dbCtx.config, false);
@@ -249,8 +233,6 @@ namespace DiaryJournal.Net
             lvChildren.KeyPress += new System.Windows.Forms.KeyPressEventHandler(lvChildren_KeyPressed);
 
         }
-
-
         private void CmbFonts_DropDownClosed(object? sender, EventArgs e)
         {
             ToolStripComboBox comboBox = (ToolStripComboBox)sender;
@@ -440,27 +422,11 @@ namespace DiaryJournal.Net
         public void applyConfig()
         {
             chkCfgAutoLoadCreateDefaultDB.Checked = cfg.chkCfgAutoLoadCreateDefaultDB;
-
             rtbViewEntry.RightMargin = cfg.cmbCfgRtbViewEntryRMValue;
             int index = cmbCfgRtbViewEntryRM.FindString(rtbViewEntry.RightMargin.ToString());
             cmbCfgRtbViewEntryRM.SelectedIndex = index;
             radCfgLMNode.Checked = cfg.radCfgLMNode;
             radCfgLCNode.Checked = cfg.radCfgLCNode;
-
-            if (cfg.tvEntriesItemHeight <= 0) cfg.tvEntriesItemHeight = myConfig.default_tvEntriesItemHeight;
-            if (cfg.tvEntriesIndent <= 0) cfg.tvEntriesIndent = myConfig.default_tvEntriesIndent;
-
-            //if (cfg.tvEntriesFont == null) cfg.tvEntriesFont = myConfig.default_tvEntriesFont;
-            //tvEntries.Font = cfg.tvEntriesFont;
-            //linkCfgTVEntriesFont.Text = myCommonMethods1.FontToString(cfg.tvEntriesFont);
-
-            //if (cfg.tvEntriesBackColor == Color.Empty) cfg.tvEntriesBackColor = myConfig.default_tvEntriesBackColor;
-            //if (cfg.tvEntriesForeColor == Color.Empty) cfg.tvEntriesForeColor = myConfig.default_tvEntriesForeColor;
-            //tvEntries.BackColor = cfg.tvEntriesBackColor;
-            //tvEntries.ForeColor = cfg.tvEntriesForeColor;
-            //linkCfgTVEntriesFont.BackColor = cfg.tvEntriesBackColor;
-            //linkCfgTVEntriesFont.ForeColor = cfg.tvEntriesForeColor;
-
         }
 
         public void viewEntry(RegisterItem item)
@@ -869,8 +835,9 @@ namespace DiaryJournal.Net
             else if (radCfgLCNode.Checked)
                 textboxPath.Text = dbCtx.dbConfig.latestCreatedEntry.ToString();
 
-            MessageBox.Show("warning: database is write locked. to write in it, please disable write lock in database manager form.", "warning",
-                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            if (dbCtx.readOnly)
+                MessageBox.Show("warning: database is write locked. to write in it, please disable write lock in database manager form.", "warning",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 
             // operations status form
             this.Enabled = false;
@@ -992,43 +959,14 @@ namespace DiaryJournal.Net
                 LVCurrentPathAddItem(parentItem, dirIndex++, "..");
             }
 
+            // reload empty slots system node
+            currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
+
             // load registry item's node config from entry file
             String rtf = "";
             byte[]? xamlbytesOut = null;
-            currentItem.loadNode(dbCtx, ref rtf, ref xamlbytesOut, false);
-            currentItem.children = new ChildrenRegister();
-            ChildrenRegister.Initialize(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.children, currentItem);
-
-
+            currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, false, false, true, true);
             RegisterItem? child = currentItem.children.Next();
-            /*
-            RegisterItem? childLibrary = currentItem.children.Next();
-            child = currentItem.children.First();
-            childLibrary.InitializeSystem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile);
-            child.InitializeSystem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile);
-            RegisterItem? test = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 17, false, false, false, false);
-            test.tree.MoveDescendants(test, ref childLibrary);
-            //test.tree.Move(test, ref childLibrary);
-            child = currentItem.children.First();
-            childLibrary = currentItem.children.Next();
-            childLibrary.InitializeSystem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile);
-            List<RegisterItem> tree = null;
-            childLibrary.InitializeSystem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile);
-            childLibrary.tree.GetDescendants(child, ref tree);
-            */
-            /*
-            RegisterItem? testDest = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 2, false, false, false, false);
-            RegisterItem? test = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 18, false, false, false, false);
-            test.tree.MoveDescendants(test, ref testDest);
-            testDest = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 2, false, false, false, false);
-            List<RegisterItem> tree = null;
-            testDest.tree.GetWholeTree(ref tree, false);
-            RegisterItem? jrn = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 1, false, false, false, false);
-            List<RegisterItem> tree2 = null;
-            jrn.tree.GetWholeTree(ref tree2, false);
-            testDest = Register.LoadSetupRegisterItem(dbCtx, VhdCtx.dbCtx.dbNodeTreeRegistryFile, 2, false, false, false, false);
-            */
-
             while (child != null)
             {
                 if (child.domainType != DomainType.HiddenCore && child.nodeType != NodeType.EmptySlot)
@@ -1087,8 +1025,6 @@ namespace DiaryJournal.Net
 
             // phase 2 - first at the top place, add parent child relation list items
 
-            //MessageBox.Show("reloadChildren() 1 of 3");
-
             lv.BeginUpdate();
             lv.Items.Clear();
 
@@ -1108,8 +1044,6 @@ namespace DiaryJournal.Net
                 LVChildrenAddItem(lv, parentItem, dirIndex++, "..");
             }
 
-            //MessageBox.Show("reloadChildren() 2 of 3");
-
             String rtf = "";
             byte[]? xamlbytesOut = null;
             RegisterItem? child = currentItem.children.Next();
@@ -1125,10 +1059,6 @@ namespace DiaryJournal.Net
                 child = currentItem.children.Next();
             }
             lv.EndUpdate();
-            //MessageBox.Show("reloadChildren() 3 of 3");
-
-            //this.Enabled = true;
-            //formOperation.close();
             return true;
         }
 
@@ -1236,9 +1166,6 @@ namespace DiaryJournal.Net
             tsbuttonSave.BackColor = SystemColors.Control;
             tsslblStateChanged.BackColor = SystemColors.Control;
         }
-
-
-
         public void undortbEntry()
         {
             rtbEntry.Undo();
@@ -1255,7 +1182,6 @@ namespace DiaryJournal.Net
         {
             undortbEntry();
         }
-
         public void changeEntryTitle()
         {
             if (currentPathItem == null) return;
@@ -1534,53 +1460,6 @@ namespace DiaryJournal.Net
             // now set other 1st level config
             cfg.radCfgLMNode = radCfgLMNode.Checked;
             cfg.radCfgLCNode = radCfgLCNode.Checked;
-
-            /* todo
-            int tvEntriesItemHeight = 16;
-            if (!int.TryParse(cmbCfgTVEntriesItemHeight.Text, out tvEntriesItemHeight))
-            {
-                MessageBox.Show(err, "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            //todo cfg.tvEntriesItemHeight = tvEntriesItemHeight;
-            //tvEntries.ItemHeight = tvEntriesItemHeight;
-
-            int tvEntriesIndent = 20;
-            if (!int.TryParse(cmbCfgTVEntriesIndent.Text, out tvEntriesIndent))
-            {
-                MessageBox.Show(err, "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-            //todo cfg.tvEntriesIndent = tvEntriesIndent;
-            //tvEntries.Indent = tvEntriesIndent;
-
-            System.Drawing.Font tvEntriesFont = myCommonMethods1.StringToFont(linkCfgTVEntriesFont.Text);
-            if (tvEntriesFont == null) tvEntriesFont = myConfig.default_tvEntriesFont;
-            cfg.tvEntriesFont = tvEntriesFont;
-            //todo tvEntries.Font = tvEntriesFont;
-
-            System.Drawing.Color tvEntriesBackColor = linkCfgTVEntriesFont.BackColor;
-            System.Drawing.Color tvEntriesForeColor = linkCfgTVEntriesFont.ForeColor;
-            cfg.tvEntriesBackColor = tvEntriesBackColor;
-            cfg.tvEntriesForeColor = tvEntriesForeColor;
-            //todo tvEntries.BackColor = tvEntriesBackColor;
-            //tvEntries.ForeColor = tvEntriesForeColor;
-            */
-
-            myConfigMethods.saveConfigFile(myConfigMethods.getConfigPathFile(), ref cfg, false);
-
-            // message
-            MessageBox.Show("1st level configuration is set.", "set 1st level config", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
-            // abort if no more config can be saved if a db is loaded.
-            if (dbCtx.isDBOpen())
-            {
-                MessageBox.Show("error changing 2nd level config. please save and close the opened db and retry.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
-
-            // in the final place, apply all configuration when db is closed.
-            // update config
             cfg.chkCfgAutoLoadCreateDefaultDB = chkCfgAutoLoadCreateDefaultDB.Checked;
             myConfigMethods.saveConfigFile(myConfigMethods.getConfigPathFile(), ref cfg, false);
             MessageBox.Show("applied all levels of configurations.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1611,9 +1490,6 @@ namespace DiaryJournal.Net
             rtbEntry.Bold = fontDialog.bold;
             rtbEntry.Italic = fontDialog.italic;
             rtbEntry.toggleSelectionAllDecorations(rtbEntry.Selection, fontDialog.underline, fontDialog.strikeout);
-            //rtbEntry.Strikeout = fontDialog.strikeout;
-            //rtbEntry.Underline = fontDialog.underline;
-
         }
 
         private void cmbSize_Click(object sender, EventArgs e)
@@ -1860,11 +1736,6 @@ namespace DiaryJournal.Net
             undoRestore();
         }
 
-        private void findTotalEntriesInDatabaseToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            MessageBox.Show($"total number of actual valid-validly existent entries are: {Register.CountValidEntries(dbCtx, dbCtx.dbNodeTreeRegistryFile)}.", "status", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
         private void toolStripMenuItem22_Click(object sender, EventArgs e)
         {
             doNewChildEntry();
@@ -1937,6 +1808,7 @@ namespace DiaryJournal.Net
         // this method sets the highlights and font for a given tree node
         public static void loadNodeHighlight(OpenFSDBContext? ctx, TreeNode treeNode, ref myNode? node)
         {
+            /*
             TreeNode tmpNode = new TreeNode();
             tmpNode.NodeFont = ctx.config.tvEntriesFont;// new System.Drawing.Font("Arial", 8, FontStyle.Regular);
 
@@ -1954,7 +1826,7 @@ namespace DiaryJournal.Net
                 treeNode.BackColor = myCommonMethods1.StringToColor(node.chapter.HLBackColor);
             else
                 treeNode.BackColor = tmpNode.BackColor;
-
+            */
         }
 
         public void loadNodeHighlight(TreeNode treeNode)
@@ -2322,16 +2194,6 @@ namespace DiaryJournal.Net
 
         }
 
-        private void generateTestEntryToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            //rtbEntry.Selection.Text = myCommonMethods1.RandomString(1048576);
-        }
-
-        private void lvTrashCan_SelectedIndexChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void increaseFontSizeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             formatting.formatIncreaseFontSize(rtbEntry);
@@ -2621,28 +2483,7 @@ namespace DiaryJournal.Net
 
         private void moveNodeToRootToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (!dbCtx.isDBOpen())
-                return;
-
-            if (currentPathItem == null) return;
-            if (currentPathItem.Id == 0) return;
-
-            // skip if this is system node, we cannot change it
-            if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
-                return;
-
-            // move node to root
-            entryMethods.DBMoveNodeOFSDB(dbCtx, currentPathItem.Id, 0);
-
-            // get current register item latest state
-            RegisterItem? currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
-            if (currentItem == null) return;
-
-            //setup
-            currentPathItem = currentItem;
-
-            // update form
-            reloadPath("", false, currentPathItem);
+            MoveNode(0);
         }
 
         private void promoteNodeToolStripMenuItem1_Click(object sender, EventArgs e)
@@ -2652,75 +2493,24 @@ namespace DiaryJournal.Net
         private void moveNodeToRootToolStripMenuItem1_Click(object sender, EventArgs e)
         {
         }
-
-        public void __moveNodeTo(TreeNode? subjectTreeNode)
-        {
-            /* todo
-            FormTree form = new FormTree();
-            form.allNodes = new List<myNode>(allNodes);
-            form.cfg = cfg;
-            form.defaultFont = tvEntries.Font;
-            form.tvHeight = tvEntries.ItemHeight;
-            form.tvIndent = tvEntries.Indent;
-            if (form.ShowDialog() != DialogResult.OK)
-                return;
-
-            // resetup newly updated tree into the primary tree work list.
-            allNodes = new List<myNode>(form.allNodes);
-
-            TreeNode? targetTreeNode = form.tvEntries.SelectedNode;
-            if (targetTreeNode == null) // no node selected, abort.
-                return;
-
-            Int64 targetNodeId = Int64.Parse(targetTreeNode.Name);
-            myNode? targetNode = entryMethods.FindNodeInList(ref allNodes, targetNodeId);
-            if (targetNode == null)
-                return;
-
-            Int64 subjectNodeId = Int64.Parse(subjectTreeNode.Name);
-            myNode? subjectNode = entryMethods.FindNodeInList(ref allNodes, subjectNodeId);
-            if (subjectNode == null)
-                return;
-
-            if (subjectNodeId == targetNodeId)
-                return; // same target node selected as the subject node, so abort.
-
-            if (!entryMethods.DBSetNodeParent(dbCtx, ref subjectNode, targetNodeId))
-                return;
-
-            // rebuild lineage
-            subjectNode.lineage = entryMethods.findBottomToRootNodesRecursive(ref allNodes, ref subjectNode, false, true, true);
-
-            if (__findTreeNode(targetNodeId, out targetTreeNode))
-            {
-                // target tree node found in current tree nodes
-                subjectTreeNode.Remove();
-                targetTreeNode.Nodes.Add(subjectTreeNode);
-                tvEntries.SelectedNode = subjectTreeNode;
-                subjectTreeNode.ExpandAll();
-                subjectTreeNode.EnsureVisible();
-            }
-            */
-        }
-        public void doMoveNodeTo()
+        public void MoveNode(Int64 destId)
         {
             if (!dbCtx.isDBOpen())
                 return;
 
             if (currentPathItem == null) return;
-            if (currentPathItem.Id == 0) return;
+            if (currentPathItem.Id <= 0) return;
+            if (currentPathItem.Id == destId) return;
 
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
 
-            FormTreeDesign2 form = new FormTreeDesign2();
-            form.ctx = dbCtx;
-            if (form.ShowDialog() != DialogResult.OK) return;
-            if (form.selectedPathItem == null) return;
+            if (currentPathItem.Id == destId)
+                return;
 
             // move node 
-            entryMethods.DBMoveNodeOFSDB(dbCtx, currentPathItem.Id, form.selectedPathItem.Id);
+            entryMethods.DBMoveNodeOFSDB(dbCtx, currentPathItem.Id, destId);
 
             // get current register item latest state
             RegisterItem? currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
@@ -2734,12 +2524,26 @@ namespace DiaryJournal.Net
         }
         private void toolStripMenuItem11_Click(object sender, EventArgs e)
         {
-            doMoveNodeTo();
+            if (!dbCtx.isDBOpen())
+                return;
+
+            if (currentPathItem == null) return;
+            if (currentPathItem.Id <= 0) return;
+
+            // skip if this is system node, we cannot change it
+            if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
+                return;
+
+            FormTreeDesign2 form = new FormTreeDesign2();
+            form.ctx = dbCtx;
+            if (form.ShowDialog() != DialogResult.OK) return;
+            if (form.selectedPathItem == null) return;
+
+            MoveNode(form.selectedPathItem.Id);
         }
 
         private void moveNodeToToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            doMoveNodeTo();
         }
 
         private void exportEntryAsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3070,46 +2874,6 @@ namespace DiaryJournal.Net
             dtpickerDDSearchFromTime.Value = DateTime.Parse("0:00:00");
             dtpickerDDSearchThroughTime.Value = DateTime.Parse("23:59:59");
         }
-
-        public void CloneDB(DatabaseType srcDBType, DatabaseType destDBType, bool reindex = false)
-        {
-            // todo everything
-
-            // firstly save entry
-            saveEntry();
-
-            /*
-            // source db
-            String dbName = "";
-            myConfig? cfgSrc = entryMethods.DBSelectOpenLoadDB(srcDBType, ref dbName, null);
-            if (cfgSrc == null) return;
-
-            if (userInterface.ShowInputDialog("input new clone db name/title", ref dbName) != DialogResult.OK)
-            {
-                cfgSrc.close();
-                return;
-            }
-            if (dbName.Length <= 0)
-            {
-                cfgSrc.close();
-                return;
-            }
-
-            // destination clone db
-            myConfig? cfgDest = entryMethods.DBSelectOpenLoadDestinationDB(destDBType, dbName, null, true, true);
-            if (cfgDest == null)
-            {
-                cfgSrc.close();
-                return;
-            }
-
-            // finally clone db from src to dest
-            this.Invoke(toggleForm, false);
-            entryMethods.CloneDB(this, ref cfgSrc, ref cfgDest, srcDBType, destDBType, true, reindex);
-            this.Invoke(toggleForm, true);
-            */
-        }
-
         private void toolStripMenuItem46_Click(object sender, EventArgs e)
         {
             exportSet(DatabaseType.OpenFSDB, false);
@@ -3137,11 +2901,6 @@ namespace DiaryJournal.Net
 
             // load node
             Int64 id = Int64.Parse(lvitem.Name);
-            //            myNode? node = entryMethods.FindNodeInList(ref allNodes, id);
-            //          if (node == null) return;
-
-            //        Int64 id = Int64.Parse(treeNode.Name);
-
             doExportCustomEntry(id);
 
         }
@@ -3818,7 +3577,6 @@ namespace DiaryJournal.Net
                 return false;
             }
 
-
             RegisterItem? cloneItem = entryMethods.DBCloneNodeOFSDB(dbCtx, id, locationId, ref emptySlotsItem);
             if (cloneItem == null) return false;
 
@@ -3896,44 +3654,9 @@ namespace DiaryJournal.Net
                 MessageBox.Show(this, "error occured while cloning the current node.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }
 
-        private void linkCfgTVEntriesFont_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
-        {
-            /* todo tushar 06 February 2025
-            CustomFontDialog fontDialog = new CustomFontDialog();
-            System.Drawing.Font font = myCommonMethods1.StringToFont(linkCfgTVEntriesFont.Text);
-            fontDialog.font = font;
-            fontDialog.size = (int)font.Size;
-            fontDialog.bold = font.Bold;
-            fontDialog.italic = font.Italic;
-            fontDialog.underline = font.Underline;
-            fontDialog.strikeout = font.Strikeout;
-            fontDialog.fontBackColor = linkCfgTVEntriesFont.BackColor;
-            fontDialog.fontColor = linkCfgTVEntriesFont.ForeColor;
-            fontDialog.editor = false;
-
-            if (fontDialog.ShowDialog() != DialogResult.OK)
-                return;
-
-            Color backColor = Color.Empty;
-            Color foreColor = Color.Empty;
-            font = fontDialog.getNewFontComplete(out backColor, out foreColor);
-            if (backColor == Color.Empty) backColor = myConfig.default_tvEntriesBackColor;
-            if (foreColor == Color.Empty) foreColor = myConfig.default_tvEntriesForeColor;
-            linkCfgTVEntriesFont.Text = myCommonMethods1.FontToString(font);
-            linkCfgTVEntriesFont.BackColor = backColor;
-            linkCfgTVEntriesFont.ForeColor = foreColor;
-            */
-        }
-
         private void buttonResetConfig1_Click(object sender, EventArgs e)
         {
             cmbCfgRtbViewEntryRM.SelectedIndex = cmbCfgRtbViewEntryRM.FindString(myConfig.default_cmbCfgRtbViewEntryRMValue.ToString());
-            cmbCfgTVEntriesItemHeight.SelectedIndex = cmbCfgTVEntriesItemHeight.FindString(myConfig.default_tvEntriesItemHeight.ToString());
-            cmbCfgTVEntriesIndent.SelectedIndex = cmbCfgTVEntriesIndent.FindString(myConfig.default_tvEntriesIndent.ToString());
-            linkCfgTVEntriesFont.Text = myCommonMethods1.FontToString(myConfig.default_tvEntriesFont);
-            linkCfgTVEntriesFont.BackColor = myConfig.default_tvEntriesBackColor;
-            linkCfgTVEntriesFont.ForeColor = myConfig.default_tvEntriesForeColor;
-
         }
         private void gotoLatestEntryToolStripMenuItem_Click(object sender, EventArgs e)
         {
@@ -4186,8 +3909,6 @@ namespace DiaryJournal.Net
             item.loadNode(dbCtx, ref rtf, ref xamlbytes, true);
 
             // initialize an rtb control and set the rtf into it for processing
-            //System.Windows.Controls.RichTextBox rtb = new System.Windows.Controls.RichTextBox();
-            //WpfRtbMethods.FromRtf(rtb, rtf);
             if (dbCtx.dbEntryType == EntryType.Xaml)
                 xamlEntry.dummy.XamlBytes = xamlbytes;
             else
@@ -4439,12 +4160,7 @@ namespace DiaryJournal.Net
             if (ofd.ShowDialog() != DialogResult.OK) return;
 
             rtbViewEntry.LoadFile(ofd.FileName);
-            //String rtf = File.ReadAllText(ofd.FileName);
-            //rtbViewEntry.Rtf = rtf;
             tabControlJournal.SelectedTab = tabPageViewEntry;
-
-
-
         }
 
         private void ofdFile_FileOk(object sender, System.ComponentModel.CancelEventArgs e)
@@ -4502,8 +4218,6 @@ namespace DiaryJournal.Net
         {
             if (lvCurrentPath.SelectedItems.Count == 0) return;
             ListViewItem selectedItem = lvCurrentPath.SelectedItems[0];
-            //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-            //reloadChildren(item.Id);
             Int64 id = (Int64)selectedItem.Tag;
             reloadChildren(id, lvChildren);
         }
@@ -4515,8 +4229,6 @@ namespace DiaryJournal.Net
                 // Enter key pressed
                 if (lvCurrentPath.SelectedItems.Count == 0) return;
                 ListViewItem selectedItem = lvCurrentPath.SelectedItems[0];
-                //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-                //reloadChildren(item.Id);
                 Int64 id = (Int64)selectedItem.Tag;
                 reloadChildren(id, lvChildren);
             }
@@ -4525,7 +4237,6 @@ namespace DiaryJournal.Net
         {
             if (lvCurrentPath.SelectedItems.Count == 0) return;
             ListViewItem selectedItem = lvCurrentPath.SelectedItems[0];
-            //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
             Int64 id = (Int64)selectedItem.Tag;
             reloadPath(id.ToString(), true, null);
         }
@@ -4534,8 +4245,6 @@ namespace DiaryJournal.Net
         {
             if (lvChildren.SelectedItems.Count == 0) return;
             ListViewItem selectedItem = lvChildren.SelectedItems[0];
-            //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-            //reloadChildren(item.Id);
             Int64 id = (Int64)selectedItem.Tag;
             reloadChildren(id, lvChildsChildren);
 
@@ -4547,8 +4256,6 @@ namespace DiaryJournal.Net
                 // Enter key pressed
                 if (lvChildren.SelectedItems.Count == 0) return;
                 ListViewItem selectedItem = lvChildren.SelectedItems[0];
-                //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-                //reloadChildren(item.Id);
                 Int64 id = (Int64)selectedItem.Tag;
                 reloadChildren(id, lvChildsChildren);
             }
@@ -4558,8 +4265,6 @@ namespace DiaryJournal.Net
         {
             if (lvChildren.SelectedItems.Count == 0) return;
             ListViewItem selectedItem = lvChildren.SelectedItems[0];
-            //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-            //reloadPath(item.Id.ToString(), true, null);
             Int64 id = (Int64)selectedItem.Tag;
             reloadPath(id.ToString(), true, null);
         }
@@ -4567,8 +4272,6 @@ namespace DiaryJournal.Net
         {
             if (lvChildsChildren.SelectedItems.Count == 0) return;
             ListViewItem selectedItem = lvChildsChildren.SelectedItems[0];
-            //RegisterItem? item = (RegisterItem?)selectedItem.Tag;
-            //reloadPath(item.Id.ToString(), true, null);
             Int64 id = (Int64)selectedItem.Tag;
             reloadPath(id.ToString(), true, null);
         }
@@ -4714,7 +4417,7 @@ namespace DiaryJournal.Net
         private void toolStripMenuItem4_Click(object sender, EventArgs e)
         {
             if (currentPathItem == null) return;
-            entryMethods.DBExploreEntryFileOFSDB(dbCtx, currentPathItem.DirectorySectionId, currentPathItem.Id);
+            entryMethods.DBExploreEntryFileOFSDB(dbCtx, currentPathItem.sectionId, currentPathItem.Id);
         }
 
         private void showSelectedTextInStickyNotesFormToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4735,17 +4438,19 @@ namespace DiaryJournal.Net
             form.listType = FormList.ListType.Int64;
             form.allItems = found;
 
-            List<RegisterItem> items = null;
-            currentPathItem.InitializeSystem(dbCtx, dbCtx.dbNodeTreeRegistryFile, true, true);
-            currentPathItem.tree.GetDescendants(currentPathItem, ref items);
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, false, false, true, false, true, true);
+            currentPathItem.tree.GetDescendantTreeSequence(ref currentPathItem.treeList);
 
             // iterate
-            foreach (RegisterItem item in items)
+            foreach (RegisterItem item in currentPathItem.treeList)
                 found.Add(item.Id);
 
             // let the user choose and insert a single template code into the template entry
             form.Text = $"total descendants of current node: {found.LongCount()}";
             if (form.ShowDialog(this) != DialogResult.OK) return;
+
+            Int64 id = (Int64)form.outSelectedItem;
+            __gotoEntryById(id);
 
         }
 
@@ -4789,7 +4494,8 @@ namespace DiaryJournal.Net
                 if ((lvItem.SubItems[1].Text == @"\") || (lvItem.SubItems[1].Text == @".") || (lvItem.SubItems[1].Text == @"..")) continue;
                 RegisterItem? regitem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, (Int64)lvItem.Tag, false, false, false, false, true, true);
                 this.emptySlotsItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, this.emptySlotsItem.Id, false, false, false, false, true, true);
-                regitem.tree.DeleteDescendants(regitem, true, ref this.emptySlotsItem, false);
+                RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, regitem.parentId, false, false, false, false, true, true);
+                parent.tree.Delete(regitem, emptySlotsItem);
             }
 
             this.Invoke(toggleForm, true);
@@ -4864,7 +4570,7 @@ namespace DiaryJournal.Net
                 RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, (Int64)id, false, false, false, false, true, true);
                 if (item == null) continue;
 
-                item.DirectorySectionId = node.DirectorySectionID;
+                item.sectionId = node.DirectorySectionID;
                 item.domainType = node.chapter.domainType;
                 item.specialNodeType = node.chapter.specialNodeType;
                 item.parentId = form2.selectedPathItem.Id;
@@ -4877,7 +4583,7 @@ namespace DiaryJournal.Net
                 RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, form2.selectedPathItem.Id, false, false, false, false, true, true);
                 if (parent == null) continue;
 
-                parent.children.Add(item, parent);
+                parent.children.Add(item);
 
                 item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, (Int64)id, false, false, false, false, true, true);
                 parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, form2.selectedPathItem.Id, false, false, false, false, true, true);

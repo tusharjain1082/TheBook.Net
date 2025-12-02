@@ -1,17 +1,23 @@
 ﻿using DiaryJournal.Net;
-using Microsoft.Win32;
-using RtfPipe;
-using RtfPipe.Tokens;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Security.Policy;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Documents;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
+
+/*
+ * 
+ * original sole developer and inventor: Tushar Jain
+ * Name/Title: Mother of Databases - The Register
+ * Projects: Tushar Jain's TheBook.Net and DiaryJournal.Net
+ * Copyright(c) Tushar Jain
+ * 
+ * */
 
 namespace TheBook.Net.Core
 {
@@ -103,67 +109,59 @@ namespace TheBook.Net.Core
 
     public class RegisterItem
     {
-        /* map = 
-         * first 8 bytes which is Int64 is reserved for flags or some function. every byte is flag enum.
-         * */
-
         public Int64 position = 0;
 
-        // 36 bytes binary block is made of all these elements =
-        public const int blockSize = ((sizeof(Int64) * 14) + 4);
+        public const int blockSize = ((sizeof(Int64) * 10) + 4);
         public Int64 Id = 0;
+
+        // 10 Int64 * 8 bytes = 80 bytes binary block is made of all these elements =
         public Int64 parentId = 0;
-        public Int64 DirectorySectionId = 0;
-        public Int64 firstChildId = 0;
-        public Int64 lastChildId = 0;
+        public Int64 sectionId = 0;
+        public Int64 headId = 0;
+        public Int64 tailId = 0;
         public Int64 nextSiblingId = 0;
         public Int64 previousSiblingId = 0;
         public Int64 childrenCount = 0;
-        public Int64 treeRootId = 0;
-        public Int64 treeHeadId = 0;
-        public Int64 treeTailId = 0;
-        public Int64 nextDescendantId = 0;
-        public Int64 previousDescendantId = 0;
-        public Int64 descendantsCount = 0;
+        public Int64 usedSlots = 0;
+        public Int64 nextId = 0;
+        public Int64 prevId = 0;
+
+        // 4 bytes binary block is made of all these elements =
         public NodeType nodeType = NodeType.Entry;
         public SpecialNodeType specialNodeType = SpecialNodeType.None;
         public DomainType domainType = DomainType.Journal;
         public RegisterItemFlags1 flags1 = RegisterItemFlags1.None;
-
 
         public myNode? node = null;
         public ChildrenRegister? children = null;
         public String rtf = "";
         public byte[]? xamlbytes = Array.Empty<byte>();
         public List<RegisterItem>? childrenList = null;
+        public List<RegisterItem>? treeList = null;
 
-        public LineageRegister? tree = null;
+        public TreeSequenceRegister? tree = null;
 
         public RegisterItem()
         {
 
         }
         public RegisterItem(Int64 position, Int64 id, Int64 parentid, Int64 sectionid, Int64 childrenCount,
-            Int64 firstChildId, Int64 lastChildId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
+            Int64 headId, Int64 tailId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType, RegisterItemFlags1 flags1,
-            Int64 treeRootId, Int64 treeHeadId, Int64 treeTailId,
-            Int64 nextDescendantId, Int64 prevDescendantId, Int64 descendantsCount)
+            Int64 usedSlots, Int64 nextId, Int64 prevId)
         {
             this.position = position;
             this.Id = id;
             this.parentId = parentid;
-            this.DirectorySectionId = sectionid;
-            this.firstChildId = firstChildId;
-            this.lastChildId = lastChildId;
+            this.sectionId = sectionid;
+            this.headId = headId;
+            this.tailId = tailId;
             this.nextSiblingId = nextSiblingId;
             this.previousSiblingId = previousSiblingId;
             this.childrenCount = childrenCount;
-            this.treeRootId = treeRootId;
-            this.treeHeadId = treeHeadId;
-            this.treeTailId = treeTailId;
-            this.nextDescendantId = nextDescendantId;
-            this.previousDescendantId = prevDescendantId;
-            this.descendantsCount = descendantsCount;
+            this.usedSlots = usedSlots;
+            this.nextId = nextId;
+            this.prevId = prevId;
             this.nodeType = nodeType;
             this.specialNodeType = specialNodeType;
             this.domainType = domainType;
@@ -175,28 +173,27 @@ namespace TheBook.Net.Core
             this.position = item.position;
             this.Id = item.Id;
             this.parentId = item.parentId;
-            this.DirectorySectionId = item.DirectorySectionId;
-            this.firstChildId = item.firstChildId;
-            this.lastChildId = item.lastChildId;
+            this.sectionId = item.sectionId;
+            this.headId = item.headId;
+            this.tailId = item.tailId;
             this.nextSiblingId = item.nextSiblingId;
             this.previousSiblingId = item.previousSiblingId;
             this.childrenCount = item.childrenCount;
-            this.treeRootId = item.treeRootId;
-            this.treeHeadId = item.treeHeadId;
-            this.treeTailId = item.treeTailId;
-            this.nextDescendantId = item.nextDescendantId;
-            this.previousDescendantId = item.previousDescendantId;
-            this.descendantsCount = item.descendantsCount;
+            this.usedSlots = item.usedSlots;
+            this.nextId = item.nextId;
+            this.prevId = item.prevId;
+
             this.nodeType = item.nodeType;
             this.specialNodeType = item.specialNodeType;
             this.domainType = item.domainType;
             this.flags1 = item.flags1;
+
         }
         public void CopyFrom(myNode node, bool copyId, bool copyParentId, bool copySectionId)
         {
             if (copyId) this.Id = node.chapter.Id;
             if (copyParentId) this.parentId = node.chapter.parentId;
-            if (copySectionId) this.DirectorySectionId = node.DirectorySectionID;
+            if (copySectionId) this.sectionId = node.DirectorySectionID;
             this.nodeType = node.chapter.nodeType;
             this.specialNodeType = node.chapter.specialNodeType;
             this.domainType = node.chapter.domainType;
@@ -227,7 +224,7 @@ namespace TheBook.Net.Core
             RegisterItem item = new RegisterItem();
             item.Id = node.chapter.Id;
             item.parentId = node.chapter.parentId;
-            item.DirectorySectionId = node.DirectorySectionID;
+            item.sectionId = node.DirectorySectionID;
             item.nodeType = node.chapter.nodeType;
             item.specialNodeType = node.chapter.specialNodeType;
             item.domainType = node.chapter.domainType;
@@ -239,12 +236,8 @@ namespace TheBook.Net.Core
             if (node.chapter == null) return null;
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
-            bw.Write((Int64)0);//node.chapter.Id);
             bw.Write(node.chapter.parentId);
             bw.Write(node.DirectorySectionID);
-            bw.Write((Int64)0);
-            bw.Write((Int64)0);
-            bw.Write((Int64)0);
             bw.Write((Int64)0);
             bw.Write((Int64)0);
             bw.Write((Int64)0);
@@ -259,28 +252,23 @@ namespace TheBook.Net.Core
             bw.Write((byte)0);
             return ms.ToArray();
         }
-        public static byte[] convertToBytes(Int64 id, Int64 parentId, Int64 DirectorySectionId, Int64 childrenCount,
-            Int64 firstChildId, Int64 lastChildId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
+        public static byte[] convertToBytes(Int64 id, Int64 parentId, Int64 sectionId, Int64 childrenCount,
+            Int64 headId, Int64 tailId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType, RegisterItemFlags1 flags1,
-            Int64 treeRootId, Int64 treeHeadId, Int64 treeTailId,
-            Int64 nextDescendantId, Int64 prevDescendantId, Int64 descendantsCount)
+            Int64 usedSlots, Int64 nextId, Int64 prevId)
         {
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
-            bw.Write((Int64)0);// id);
             bw.Write(parentId);
-            bw.Write(DirectorySectionId);
-            bw.Write(firstChildId);
-            bw.Write(lastChildId);
+            bw.Write(sectionId);
+            bw.Write(headId);
+            bw.Write(tailId);
             bw.Write(nextSiblingId);
             bw.Write(previousSiblingId);
             bw.Write(childrenCount);
-            bw.Write(treeRootId);
-            bw.Write(treeHeadId);
-            bw.Write(treeTailId);
-            bw.Write(nextDescendantId);
-            bw.Write(prevDescendantId);
-            bw.Write(descendantsCount);
+            bw.Write(usedSlots);
+            bw.Write(nextId);
+            bw.Write(prevId);
             bw.Write((byte)nodeType);
             bw.Write((byte)specialNodeType);
             bw.Write((byte)domainType);
@@ -291,20 +279,16 @@ namespace TheBook.Net.Core
         {
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
-            bw.Write((Int64)0);// item.Id);
             bw.Write(item.parentId);
-            bw.Write(item.DirectorySectionId);
-            bw.Write(item.firstChildId);
-            bw.Write(item.lastChildId);
+            bw.Write(item.sectionId);
+            bw.Write(item.headId);
+            bw.Write(item.tailId);
             bw.Write(item.nextSiblingId);
             bw.Write(item.previousSiblingId);
             bw.Write(item.childrenCount);
-            bw.Write(item.treeRootId);
-            bw.Write(item.treeHeadId);
-            bw.Write(item.treeTailId);
-            bw.Write(item.nextDescendantId);
-            bw.Write(item.previousDescendantId);
-            bw.Write(item.descendantsCount);
+            bw.Write(item.usedSlots);
+            bw.Write(item.nextId);
+            bw.Write(item.prevId);
             bw.Write((byte)item.nodeType);
             bw.Write((byte)item.specialNodeType);
             bw.Write((byte)item.domainType);
@@ -327,21 +311,16 @@ namespace TheBook.Net.Core
             if (s.Position >= s.Length) return null;
             RegisterItem item = new RegisterItem();
             item.position = s.Position;
-            //item.Id = br.ReadInt64();
-            br.ReadInt64();
             item.parentId = br.ReadInt64();
-            item.DirectorySectionId = br.ReadInt64();
-            item.firstChildId = br.ReadInt64();
-            item.lastChildId = br.ReadInt64();
+            item.sectionId = br.ReadInt64();
+            item.headId = br.ReadInt64();
+            item.tailId = br.ReadInt64();
             item.nextSiblingId = br.ReadInt64();
             item.previousSiblingId = br.ReadInt64();
             item.childrenCount = br.ReadInt64();
-            item.treeRootId = br.ReadInt64();
-            item.treeHeadId = br.ReadInt64();
-            item.treeTailId = br.ReadInt64();
-            item.nextDescendantId = br.ReadInt64();
-            item.previousDescendantId = br.ReadInt64();
-            item.descendantsCount = br.ReadInt64();
+            item.usedSlots = br.ReadInt64();
+            item.nextId = br.ReadInt64();
+            item.prevId = br.ReadInt64();
             item.nodeType = (NodeType)br.ReadByte();
             item.specialNodeType = (SpecialNodeType)br.ReadByte();
             item.domainType = (DomainType)br.ReadByte();
@@ -364,28 +343,23 @@ namespace TheBook.Net.Core
             MemoryStream ms = new MemoryStream(bytes);
             BinaryReader br = new BinaryReader(ms);
             RegisterItem item = new RegisterItem();
-            //item.Id = br.ReadInt64();
-            br.ReadInt64();
             item.parentId = br.ReadInt64();
-            item.DirectorySectionId = br.ReadInt64();
-            item.firstChildId = br.ReadInt64();
-            item.lastChildId = br.ReadInt64();
+            item.sectionId = br.ReadInt64();
+            item.headId = br.ReadInt64();
+            item.tailId = br.ReadInt64();
             item.nextSiblingId = br.ReadInt64();
             item.previousSiblingId = br.ReadInt64();
             item.childrenCount = br.ReadInt64();
-            item.treeRootId = br.ReadInt64();
-            item.treeHeadId = br.ReadInt64();
-            item.treeTailId = br.ReadInt64();
-            item.nextDescendantId = br.ReadInt64();
-            item.previousDescendantId = br.ReadInt64();
-            item.descendantsCount = br.ReadInt64();
+            item.usedSlots = br.ReadInt64();
+            item.nextId = br.ReadInt64();
+            item.prevId = br.ReadInt64();
             item.nodeType = (NodeType)br.ReadByte();
             item.specialNodeType = (SpecialNodeType)br.ReadByte();
             item.domainType = (DomainType)br.ReadByte();
             item.flags1 = (RegisterItemFlags1)br.ReadByte();
             return item;
         }
-        public bool InitializeSystem(OpenFSDBContext? ctx, String registerFile, bool loadChildrenRegister, bool loadLineageRegister)
+        public bool InitializeSystem(OpenFSDBContext? ctx, String registerFile, bool loadChildrenRegister, bool loadTreeRegister)
         {
             if (loadChildrenRegister)
             {
@@ -394,11 +368,11 @@ namespace TheBook.Net.Core
                 ChildrenRegister.Initialize(ctx, registerFile, this.children, this);
             }
 
-            if (loadLineageRegister)
+            if (loadTreeRegister)
             {
                 // initialize lineage register
-                this.tree = new LineageRegister();
-                LineageRegister.Initialize(ctx, registerFile, this.tree, this);
+                this.tree = new TreeSequenceRegister();
+                TreeSequenceRegister.Initialize(ctx, registerFile, this.tree, this);
             }
 
             return true;
@@ -508,23 +482,34 @@ namespace TheBook.Net.Core
             // return the first empty slot in chain of the system node
             RegisterItem? found = emptySlots.children.First();
             if (found == null) return null;
-            if (deleteEmptySlot) emptySlots.children.Delete(found, ref emptySlots, true);
+            if (deleteEmptySlot) emptySlots.children.Delete(found, ref emptySlots, true, true);
             return found;
         }
         // this method deletes the empty slot by id in parent node
-        public static bool DeleteEmptySlot(OpenFSDBContext? ctx, String file, ref RegisterItem emptySlots, Int64 id)
+        public static bool DeleteEmptySlot(OpenFSDBContext? ctx, String file, RegisterItem emptySlots, Int64 id)
         {
             if (ctx.readOnly) return false;
 
-            // first get the latest state of empty slots register by id
-            //RegisterItem? emptySlots = LoadSetupRegisterItem(ctx, file, emptySlotsId, false, false, false);
-            //if (emptySlots == null) return false;
-
             // now get the item by id
             RegisterItem? item = LoadSetupRegisterItem(ctx, file, id, false, false, false, false, false, false);
+            emptySlots = LoadSetupRegisterItem(ctx, file, emptySlots.Id, false, false, false, false, true, true);
             if (item == null) return false;
 
-            return emptySlots.children.Delete(item, ref emptySlots, true);
+            return emptySlots.children.Delete(item, ref emptySlots, true, true);
+        }
+
+        public static bool IsDescendantOfAncestor(OpenFSDBContext? ctx, String file, RegisterItem? item, RegisterItem? ancestor)
+        {
+            List<RegisterItem>? lineage = null;
+            Register.Lineage(ctx, file, item, ref lineage, true, false, false);
+            RegisterItem? found = lineage.Find(x => x.Id == ancestor.Id);
+            if (found != null)
+            {
+                // yes current item is descendant of ancestor
+                return true;
+            }
+            // no current item is not a descendant of ancestor
+            return false;
         }
 
         // this method finds the node
@@ -544,12 +529,10 @@ namespace TheBook.Net.Core
         // this method finds the node
         public static Int64 FindNode(Stream s, Int64 id, ref RegisterItem? itemOut)
         {
-            // new change
             Int64 offset = RegisterItem.blockSize * id;
             s.Position = offset;
             RegisterItem? item = RegisterItem.convertFromBytesStream(s);
             if (item == null) return -1; // end of stream so break
-            //if (item.Id != id) return -1; // error correct node not found
             
             item.Id = id;
 
@@ -579,169 +562,6 @@ namespace TheBook.Net.Core
                 return -1;
             }
         }
-        // move parent to another parent with all true descendants move along in recursion
-        public static bool Move(OpenFSDBContext? ctx, String registerFile, Int64 Id, Int64 destId)
-        {
-            /* intelligent decision making is to be used here.
-             * this is phase 1 - we decide through destination node and then source node. 
-             * there are 3 types of nodes design we used in Registers: (1) Root (2) Root's Child Ancestor Adam (3) local lineage tree's node. 
-             * if destination node is root, and this node is root, we do not do anything.
-             * if desintation node is root, and this node's parent is root, then this node is already Root Ancestor Adam in Root, so we do not do anything.
-             * if desintation node is root, and this node is local tree node, then we first form this node as Adam, and it's descendants as it's tree, in the last
-             * we move this node physically as Adam into the root.
-             * if desintation node is not root and destination node's parent is root, then destination node is Root Ancestor Adam, then if this node 
-             * is Root Ancestor Adam we move all it's tree and itself into the desination Root Ancestor. if both nodes are same id then we do not do anything.
-             * if destination node is Root Ancestor Adam and is different from this node and or this node's Root Ancestor, and this node is either Root Ancestor 
-             * or a local tree node, then we move this node and it's descendants into the destination node and it's Root Ancestor.
-             * if destination node is Root Ancestor Adam, and this node is local tree node, and both Root Ancestors are different, then we move this node and
-             * it's descendants into destination node and it's Root Ancestor Adam.
-             * if destination node is Root Ancestor Adam, and this node is local tree node, and both's Root Ancestors are same then we move this node
-             * and all it's descendants into the destination node.
-             * if source node is local tree child and destination node is root, then we make source node a root ancestor and migrate all it's descendants into it,
-             * then we remove the source node from it's parent and insert it into root as it's child node.
-             * local tree child to root ancestor is root ancestor's tree and root ancestor's children path.
-             * local tree child to local tree child is parent to child register.
-             * root to local tree child is migration of root ancestor and all it's tree into tree of destination root ancestor and then removal of root ancestor from
-             * root and insertion into the destination parent as child.
-             * in 2nd phase which is last - we straightforwardly remove this node from it's parent if required, then we move it into destination node's children register.
-             * if destination node is local child node, and this node is local child node, if root ancestors are different then we move all descendants and 
-             * this node into destination root ancestor then we finally physically move this node from previous parent into destination node.
-             * we also change and update myNode entry config file otherwise it would result in integral failure.
-             */
-
-            if (ctx.readOnly) return false;
-
-            // load both nodes
-            if (Id == destId) return false; // cannot move on the same item
-            RegisterItem? item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-            if (item == null) return false;
-            RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-            RegisterItem? dest = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, destId, false, false, false, false, true, true);
-            if (dest == null) return false;
-
-            // validations
-            if (dest.childrenCount >= Register.default_maxChildrenNodes)
-                return false;
-
-            // we decide intelligently in primary conditions and in them multiple secondary conditions
-            if (dest.Id == 0)
-            {
-                // means we are moving the source item to root
-                if (item.Id == 0)
-                {
-                    // means source item is root, so no operation
-                    return false;
-                }
-                else if (item.Id > 0 && item.parentId == 0)
-                {
-                    // means source item is root child ancestor Adam, and it is already in root, so no operation
-                    return false;
-                }
-                else if (item.Id > 0 && item.parentId > 0)
-                {
-                    // means source item is common local tree node, so we need to construct and establish source node as root ancestor Adam and migrate it to root
-                    // we cannot move descendants tree to root because we cannot put tree in there. we move descendants tree into root ancestor Adam node
-
-                    // if destination is same where item is located, abort with error
-                    if (item.parentId == dest.Id) return false;
-
-                    if (!BuildCustomLineageStructure(ctx, registerFile, item)) return false;
-                    // now remove the item from it's parent
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-                    if (item == null) return false;
-                    if (parent == null) return false;
-                    // now remove the item from it's previous parent
-                    if (!parent.children.Remove(item)) return false;
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    dest = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, destId, false, false, false, false, true, true);
-                    // tushar [ new edit: 04-12-am 07-January-2025 ] reconfigure item
-                    item.treeRootId = 0;
-                    // finally insert the item into destination node
-                    if (!dest.children.Add(item, dest)) return false;
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    // now finally physically update node files
-                    String rtf = "";
-                    myNode? node = entryMethods.DBFindLoadNodeOFSDB(ctx, item.Id, ref rtf, false, item.DirectorySectionId);
-                    if (node == null) return false;
-                    node.chapter.parentId = item.parentId;
-                    byte[]? xamlbytes = null;
-                    entryMethods.DBUpdateNodeOFSDB(ctx, node, "", xamlbytes, false, false, false);
-                }
-                else
-                {
-                    // means error or invalid source item so abort with error
-                    return false;
-                }
-
-            }
-            else if ((dest.Id > 0 && dest.parentId == 0) || (dest.Id > 0 && dest.parentId > 0))
-            {
-                // means we are moving the source item into a root ancestor Adam which is direct child of root
-                // otherwise means the 2nd option that we are moving the source item into a local tree child as it's child and descendant
-                if (item.Id == 0)
-                {
-                    // means source item is root, so no operation
-                    return false;
-                }
-                else if ((item.Id > 0 && item.parentId == 0) || (item.Id > 0 && item.parentId > 0))
-                {
-                    // means source item is root child ancestor Adam, and it is in root, so we demote it from root ancestor and migrate it and all it's 
-                    // descendants into destination root ancestor, then remove it from root and insert it in root ancestor's children register, and lastly
-                    // update the node
-                    // or otherwise means the 2nd option that the source item is a local tree child node, so the same, we use the same methods to move the 
-                    // source node into destination node.
-                    // whether destination node is root ancestor Adam, or local tree child node, we use the same methods to move the source node and it's descendants.
-
-                    // if destination root ancestor or destination node is same as this item, abort with error
-                    if (item.Id == dest.Id) return false;
-
-                    // if destination root ancestor or destination node is already parent of this item, abort with error
-                    if (item.parentId == dest.Id) return false;
-
-                    // if it is same root ancestor where item is located, then we do not move the tree everything remains unchanged but only item is
-                    // physically moved to the destination parent node.
-                    if (!item.tree.MoveDescendants(item, true, dest.tree.rootAncestor)) return false;
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-                    if (item == null) return false;
-                    if (parent == null) return false;
-                    // now remove the item from it's previous parent
-                    if (!parent.children.Remove(item)) return false;
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    dest = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, destId, false, false, false, false, true, true);
-                    // finally insert the item into destination node
-                    if (!dest.children.Add(item, dest)) return false;
-                    // reload latest states
-                    item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-                    // now finally physically update node files
-                    String rtf = "";
-                    myNode? node = entryMethods.DBFindLoadNodeOFSDB(ctx, item.Id, ref rtf, false, item.DirectorySectionId);
-                    if (node == null) return false;
-                    node.chapter.parentId = item.parentId;
-                    byte[]? xamlbytes = null;
-                    entryMethods.DBUpdateNodeOFSDB(ctx, node, "", xamlbytes, false, false, false);
-                }
-                else
-                {
-                    // means error or invalid source item so abort with error
-                    return false;
-                }
-            }
-            else
-            {
-                // means error or invalid destination node so abort with error
-                return false;
-            }
-
-            return true;
-        }
-
         // this method inserts a node in the registry and writes the node files in db path
         public static RegisterItem? Insert(OpenFSDBContext? ctx, String registerFile, Int64 parentId,
             RegisterItem? emptySlotsItem, myNode? node, String? rtf, byte[]? xamlbytes)
@@ -775,7 +595,7 @@ namespace TheBook.Net.Core
                 // free the empty slot from it's parent register
                 if (emptySlotsItem != null)
                 {
-                    if (!DeleteEmptySlot(ctx, registerFile, ref emptySlotsItem, node.chapter.Id)) // if empty slots is passed then delete the empty slot from it
+                    if (!DeleteEmptySlot(ctx, registerFile, emptySlotsItem, node.chapter.Id)) // if empty slots is passed then delete the empty slot from it
                         return null; // error
                 }
                 // now create node at first empty slot
@@ -793,82 +613,32 @@ namespace TheBook.Net.Core
             // todo tushar: lineage root head tail etc.
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 node.chapter.parentId, node.DirectorySectionID, 0, 0, 0, 0, 0,
-                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0, 0, 0, 0);
+                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0);
+
+            // first add to parent's tree sequence register
+            parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, parent.Id, true, false, false, false, true, true);
+            parent.tree.Add(item);
+            Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, item.Id, ref item);
+            parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, parent.Id, true, false, false, false, true, true);
 
             // add to parent's children register
-            if (!parent.children.Add(item, parent))
+            if (!parent.children.Add(item))
                 return null;
 
-            // initialize the node item
+            // change in root
+            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, registerFile, 0, false, false, false, false, true, true);
+            root.usedSlots += 1;
+            Register.UpdateNode(ctx, registerFile, root, 0, false, 0, false, 0, false);
+            root = Register.LoadSetupRegisterItem(ctx, registerFile, 0, false, false, false, false, true, true);
+
+            item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.Id, false, false, false, false, true, true);
             item.node = node;
-            item.children = new ChildrenRegister();
-            if (!ChildrenRegister.Initialize(ctx, ctx.dbNodeTreeRegistryFile, item.children, item))
-                return null; // critical error
-
-            // first get latest state of the parent node
-            parent = LoadSetupRegisterItem(ctx, registerFile, parentId, false, false, false, false, true, true);
-            if (parent == null) return null;
-
-            // root cannot have lineage chain because of integrity issues while manipulating trees
-            // so only root child or Adam has lineage tree
-            if (parent.Id == 0)
-            {
-                // parent is root so this item is root child node
-                item.tree = new LineageRegister();
-                if (!LineageRegister.Initialize(ctx, ctx.dbNodeTreeRegistryFile, item.tree, item))
-                    return null; // critical error
-
-            }
-            else
-            {
-                // todo tushar 01-January-2025: bug is here, parent object is expired and is overwritten with corruption at the back
-                // in parentchildren.Add() function because the parent object is not integrally synchronized with latest correct config below.
-                // parent is not root so add to parent's lineage
-                // add to parent's root ancestor's descendants register
-                if (!parent.tree.Add(item))
-                    return null;
-
-                // initialize root child lineage tree into item
-                item.tree = new LineageRegister();
-                if (!LineageRegister.Initialize(ctx, ctx.dbNodeTreeRegistryFile, item.tree, item))
-                    return null; // critical error
-
-            }
             if (item != null)
             {
                 ctx.dbConfig.latestCreatedEntry = item.Id;
                 DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, ctx.dbConfigFile);
             }
             return item;
-        }
-
-        // this method deletes a node recursively
-        public static bool Delete(OpenFSDBContext? ctx, String registerFile, Int64 Id, ref RegisterItem? emptySlots,
-            bool withoutEmptySlotsRegister)
-        {
-            if (ctx.readOnly) return false;
-
-            // reload latest states
-            if (Id <= 0) return false; // error invalid node
-            RegisterItem? item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, Id, false, false, false, false, true, true);
-            if (item == null) return false;
-
-            // we decide intelligently in primary conditions and in them multiple secondary conditions
-            if (item.Id == 0)
-            {
-                // means this is root node, so abort with error we cannot delete root
-            }
-            else if ((item.Id > 0 && item.parentId == 0) || (item.Id > 0 && item.parentId > 0))
-            {
-                // means this is either root ancestor Adam node, or otherwise a local tree child node or local node
-                return item.tree.DeleteDescendants(item, true, ref emptySlots, withoutEmptySlotsRegister);
-            }
-            else
-            {
-                // means error or invalid destination node so abort with error
-                return false;
-            }
-            return true;
         }
 
         // this method inserts a node in the registry
@@ -906,7 +676,7 @@ namespace TheBook.Net.Core
 
             // convert the node item to bytes and write it
             // add this empty slot into empty slots parent's register. this also overwrites the old with new item
-            if (!emptySlotsParentItem.children.Add(emptySlotItem, emptySlotsParentItem)) return false;
+            if (!emptySlotsParentItem.children.Add(emptySlotItem)) return false;
             itemOut = emptySlotItem;
             return true;
         }
@@ -922,6 +692,24 @@ namespace TheBook.Net.Core
                 using (Stream? s = new FileStream(file, FileMode.Open))
                 {
                     return DeleteNode(s, item);
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+        // this method deletes a node in the registry
+        public static bool DeleteNode(OpenFSDBContext? ctx, String file, Int64 id)
+        {
+            if (ctx.readOnly) return false;
+            if (!File.Exists(file)) return false;
+
+            try
+            {
+                using (Stream? s = new FileStream(file, FileMode.Open))
+                {
+                    return DeleteNode(s, id);
                 }
             }
             catch
@@ -988,7 +776,7 @@ namespace TheBook.Net.Core
                 item.parentId = parentId;
 
             if (useDirectorySectionId)
-                item.DirectorySectionId = DirectorySectionId;
+                item.sectionId = DirectorySectionId;
 
             if (useChildrenCount)
                 item.childrenCount = childrenCount;
@@ -1402,45 +1190,7 @@ namespace TheBook.Net.Core
         {
             // first get the latest state of root register by id
             RegisterItem? root = LoadSetupRegisterItem(ctx, file, 0, false, false, false, false, false, false);
-            if (root == null) return -1;
-
-            Int64 nextSiblingId = -1;
-
-            RegisterItem? current = null;
-
-            if (root.firstChildId == 0) return 1; // there are no children except root, so return 1
-
-            // get the head
-            if (Register.FindNode(ctx, file, root.firstChildId, ref current) < 0)
-                return -1; // end of chain or error, abort
-
-            if (current == null)
-                return -1; // end of chain or error, abort
-
-            nextSiblingId = current.Id;
-
-            Int64 count = 1; // increment root node's counter
-
-            while (true)
-            {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, file, nextSiblingId, ref nextItem);
-                if (nextOffset < 0) break; // error or end of stream or end of register so break
-                if (nextItem == null) break; // no more items so break
-
-                // update count
-                count += nextItem.descendantsCount; // total descendants of this root ancestor
-                count += 1; // increment by 1 which is this root ancestor
-
-                // configure
-                nextSiblingId = nextItem.nextSiblingId;
-
-                // check if end of children register reached
-                if (nextItem.nextSiblingId == 0)
-                    break;
-            }
-            return count;
+            return root.usedSlots;
         }
         // we get system nodes
         public static bool FindSystemNodeRegisterItem(OpenFSDBContext? ctx, String file,
@@ -1452,10 +1202,10 @@ namespace TheBook.Net.Core
 
             RegisterItem? current = null;
 
-            if (parent.firstChildId == 0) return true; // there are no children so abort and return empty list
+            if (parent.headId == 0) return true; // there are no children so abort and return empty list
 
             // get the head
-            if (Register.FindNode(ctx, file, parent.firstChildId, ref current) < 0)
+            if (Register.FindNode(ctx, file, parent.headId, ref current) < 0)
                 return false; // end of chain or error or no children present in parent, abort
 
             if (current == null)
@@ -1502,7 +1252,7 @@ namespace TheBook.Net.Core
             listOut = list;
             RegisterItem? parent = LoadSetupRegisterItem(ctx, file, parentId, false, false, false, false, false, false);
             if (parent == null) return false;
-            if (parent.childrenCount == 0 && parent.firstChildId == 0) return true;
+            if (parent.childrenCount == 0 && parent.headId == 0) return true;
             // now get the required register item
 
             Int64 nextSiblingId = -1;
@@ -1510,7 +1260,7 @@ namespace TheBook.Net.Core
             RegisterItem? current = null;
 
             // get the head
-            if (Register.FindNode(ctx, file, parent.firstChildId, ref current) < 0)
+            if (Register.FindNode(ctx, file, parent.headId, ref current) < 0)
                 return false; // end of chain or error or no children present in parent, abort
 
             if (current == null)
@@ -1562,10 +1312,16 @@ namespace TheBook.Net.Core
             // done
             return true;
         }
+        // this method loads and setups up a register item
+        public static RegisterItem? LoadSetupRegisterItem(OpenFSDBContext? ctx, String file, RegisterItem? item, bool loadNode, bool loadRtf,
+            bool loadChildren, bool loadChildrenConfigs, bool loadChildrenRegister, bool loadTreeSeqRegister)
+        {
+            return Register.LoadSetupRegisterItem(ctx, file, item.Id, loadNode, loadRtf, loadChildren, loadChildrenConfigs, loadChildrenRegister, loadTreeSeqRegister);
+        }
 
         // this method loads and setups up a register item
         public static RegisterItem? LoadSetupRegisterItem(OpenFSDBContext? ctx, String file, Int64 id, bool loadNode, bool loadRtf,
-            bool loadChildren, bool loadChildrenConfigs, bool loadChildrenRegister, bool loadLineageRegister)
+            bool loadChildren, bool loadChildrenConfigs, bool loadChildrenRegister, bool loadTreeSeqRegister)
         {
             // initialize register
             RegisterItem? item = null;
@@ -1586,51 +1342,131 @@ namespace TheBook.Net.Core
 
             }
 
-            if (loadLineageRegister)
+            if (loadTreeSeqRegister)
             {
-                if (item.Id != 0)
-                {
-                    // item is not root, we cannot setup lineage tree chain in absolute root itself
-                    item.tree = new LineageRegister();
-                    if (!LineageRegister.Initialize(ctx, file, item.tree, item))
-                        return null; // critical error
-                }
-            }
-
-            // done
-            return item;
-        }
-        // this method loads and setups up a register item
-        public static RegisterItem? LoadSetupRegisterItem(OpenFSDBContext? ctx, String file, RegisterItem item, bool loadNode, bool loadRtf,
-            bool loadChildren, bool loadChildrenConfigs, bool loadChildrenRegister, bool loadLineageRegister)
-        {
-            byte[]? xamlbytesOut = null;
-            if (loadNode) item.loadNode(ctx, ref item.rtf, ref xamlbytesOut, loadRtf);
-
-            if (loadChildrenRegister)
-            {
-                item.children = new ChildrenRegister();
-                if (!ChildrenRegister.Initialize(ctx, file, item.children, item))
+                // tree sequence register begins from root and is present in every node
+                item.tree = new TreeSequenceRegister();
+                if (!TreeSequenceRegister.Initialize(ctx, file, item.tree, item))
                     return null; // critical error
             }
 
-            if (loadLineageRegister)
-            {
-                if (item.Id != 0)
-                {
-                    // item is not root, we cannot setup lineage tree chain in absolute root itself
-                    item.tree = new LineageRegister();
-                    if (!LineageRegister.Initialize(ctx, file, item.tree, item))
-                        return null; // critical error
-                }
-            }
-
-            if (loadChildren)
-                item.children.GetChildren(ref item.childrenList, loadChildrenConfigs);
-
             // done
             return item;
         }
+        // this method joins item's last tail's next to another item and returns original next's id
+        public static bool JoinNext(OpenFSDBContext? ctx, String file, Int64 id, Int64 nextId)
+        {
+            // 1: fetch latest states
+            RegisterItem? item = Register.LoadSetupRegisterItem(ctx, file, id, false, false, false, false, true, true);
+            RegisterItem? next = Register.LoadSetupRegisterItem(ctx, file, nextId, false, false, false, false, true, true);
+
+            // 2: get this item's absolute and last tail
+            RegisterItem? tail = item.tree.GetAbsoluteLastTreeSequenceTail();
+
+            // 3: if tail is null means no tree in item so join to item itself. if tail then join to tail. backup original next id and configure item and tail and the next node
+            if (tail != null)
+            {
+                // means there is absolute last tail in item, so configure it and the next
+                tail.nextId = next.Id;
+                next.prevId = tail.Id;
+                Register.UpdateNode(ctx, file, tail, 0, false, 0, false, 0, false);
+                Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
+            }
+            else
+            {
+                // means there is no tree in item so configure item itself and the next
+                item.nextId = next.Id;
+                next.prevId = item.Id;
+                Register.UpdateNode(ctx, file, item, 0, false, 0, false, 0, false);
+                Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
+            }
+            return true;
+        }
+        // this method joins item's prev to another item and returns original prev's id
+        public static bool JoinPrev(OpenFSDBContext? ctx, String file, Int64 id, Int64 prevId)
+        {
+            // 1: fetch latest states
+            RegisterItem? item = Register.LoadSetupRegisterItem(ctx, file, id, false, false, false, false, true, true);
+            RegisterItem? prev = Register.LoadSetupRegisterItem(ctx, file, prevId, false, false, false, false, true, true);
+
+            // means there is no tree in item so configure item itself and the next
+            item.prevId = prev.Id;
+            prev.nextId = item.Id;
+            Register.UpdateNode(ctx, file, item, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, file, prev, 0, false, 0, false, 0, false);
+            return true;
+        }
+        // this method properly moves a parent item with a tree to another location and preserves the tree sequence.
+        public static bool MoveParentProper(OpenFSDBContext? ctx, String file, RegisterItem? item, Int64 dstParentId)
+        {
+            /*
+             * these things are to be modified:
+             * source parent, destination parent, item's prev, item's last tail's next, destination last tail's next.
+             * so =
+             * 1. load source and destination parents.
+             * 2. load item's prev and last tail's next.
+             * 3. remove the item from tree sequence by joining both original endpoints to each other. this removes the item.
+             * 
+             * 
+             * if source parent is empty then that parent itself is affected it's next is changed not previous. it is joined to item's prev.
+             * if source parent has a tree then it's absolute last tail is affected it's next is changed not previous. it is joined to item's prev.
+             * if destination parent is empty then that parent itself is affected it's next is changed not previous. it is joined to item's prev.
+             * if destination parent has a tree then it's absolute last tail is affected it's next is changed not previous. it is joined to item's prev.
+             * original item's prev and item's next if item has tree otherwise item's last tail's next are changed and original next is joined to original item's prev. both are affected.
+             * original destination parent's next if empty or last tail's next if a tree is joined to item's next if empty or item's last tail's next if there is a tree.
+             * if item is empty then item itself is affected it's previous and next are changed.
+             * if item has a tree then item's prev is changed and item's absolute last tail is changed.
+             * so destination parent's original next if destination parent empty or destination parent's original last tail and original next are also affected therefore changed.
+             * 
+             * join destination last tail's next to item and item's prev to destination last tail.
+             * join destination last tail's original next to item's last tail next.
+             * join item's last tail's original next to item's original prev. so that entire item and it's tree is removed then moved at once.
+             * if tail is missing means there is no tree so we use the item or the parent itself. we configure prev and next.
+             * */
+
+            if (item.Id == 0) return true; // root cannot be moved so skip
+
+            // 1: fetch latest states
+            item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
+            RegisterItem? srcParent = Register.LoadSetupRegisterItem(ctx, file, item.parentId, false, false, false, false, true, true);
+            RegisterItem? dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
+
+            // phase 1: join item's previous and item's last tail's next to each other so that item and it's tree is removed from between.
+            // item's prev is considered previous from entire item and it's tree in tree sequence. and last tail's next is considered an alien node outside item's tree scope.
+
+            // get next
+            RegisterItem? tail = item.tree.Last();
+            Int64 nextId = item.nextId;
+            if (tail != null) // if item has a tree then it's last tail is affected.
+                nextId = tail.nextId;
+
+            // now join next to item's prev
+            JoinPrev(ctx, file, nextId, item.prevId);
+
+            // phase 2: remove item from parent's children register
+            item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
+            srcParent = Register.LoadSetupRegisterItem(ctx, file, item.parentId, false, false, false, false, true, true);
+            srcParent.children.Remove(item);
+
+            // phase 3: join item to destination's last tail and then destination's last tail's next to item's last tail's next
+            // get destination parent's last tail
+            RegisterItem? dstTail = dstParent.tree.Last();
+            if (dstTail == null) dstTail = dstParent; // if there is no tree in destination parent then destination parent is itself affected and changed.
+            Int64 dstNextId = dstTail.nextId;
+            // first join destination last tail to back of item
+            JoinPrev(ctx, file, item.Id, dstTail.Id);
+            // now join destination parent if empty otherwise last tail if tree to the item and item's next if empty otherwise item's last tail to destination last next
+            JoinNext(ctx, file, item.Id, dstNextId);
+
+            // phase 4: add the item to the destination parent's children register
+            item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
+            dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
+            dstParent.children.Add(item);
+
+            return true;
+        }
+
+
         // this method chains up all the empty slots into the parent empty slots system node's register
         public static bool BuildEmptySlotsRegister(OpenFSDBContext? ctx, String file, RegisterItem emptySlots)
         {
@@ -1664,7 +1500,7 @@ namespace TheBook.Net.Core
                 // this is an empty zeroed slot, so take it
                 if (firstChild == null) firstChild = current; // if this is the first empty slots child set it as first child
 
-                current.firstChildId = current.lastChildId = 0;
+                current.headId = current.tailId = 0;
                 if (lastChild != null)
                 {
                     // there is a last child item either 1st or 2nd or any other item in chain
@@ -1684,7 +1520,7 @@ namespace TheBook.Net.Core
                 // update current in buffer
                 current.nextSiblingId = 0;
                 current.Id = id;
-                current.DirectorySectionId = 0;
+                current.sectionId = 0;
                 current.parentId = emptySlots.Id;
                 current.nodeType = NodeType.EmptySlot;
                 current.specialNodeType = SpecialNodeType.EmptySlot;
@@ -1699,14 +1535,14 @@ namespace TheBook.Net.Core
             }
             // finally update parent node
             if (firstChild != null)
-                emptySlots.firstChildId = firstChild.Id;
+                emptySlots.headId = firstChild.Id;
             else
-                emptySlots.firstChildId = emptySlots.lastChildId = 0;
+                emptySlots.headId = emptySlots.tailId = 0;
 
             if (lastChild != null)
-                emptySlots.lastChildId = lastChild.Id;
+                emptySlots.tailId = lastChild.Id;
             else
-                emptySlots.lastChildId = emptySlots.firstChildId; // we apply first child id from parent in both first and last child ids
+                emptySlots.tailId = emptySlots.headId; // we apply first child id from parent in both first and last child ids
 
             // update parent node in buffer
             emptySlots.childrenCount = emptySlotsFound;
@@ -2013,47 +1849,17 @@ namespace TheBook.Net.Core
             */
             return;
         }
-
-        public static bool BuildCustomLineageStructure(OpenFSDBContext? ctx, String file, RegisterItem ancestor)
-        {
-            if (ctx.readOnly) return false;
-
-            if (ancestor.Id == 0) return false; // root cannot be used for tree
-
-            if (ancestor.treeRootId == 0)
-            {
-                // this ancestor is already a root child ancestor Adam, so we just initialize it with original state and do not change anything.
-                ancestor.InitializeSystem(ctx, file, true, true);
-                return true;
-            }
-            else
-            {
-                // this is not root child ancestor Adam but a local child in some tree of another root child ancestor Adam
-                // so we remove it from it's root ancestor and create this node as custom root ancestor and import all it's true descendants from original
-                // root ancestor into this custom root ancestor's lineage register
-                RegisterItem? srcRootAncestor = LoadSetupRegisterItem(ctx, file, ancestor.treeRootId, false, false, false, false, true, true);
-                // firstly remove the ancestor from it's original root ancestor's lineage register
-                //if (!srcRootAncestor.tree.Remove(ancestor)) return false; // if error abort
-                // reload states
-                //srcRootAncestor = LoadSetupRegisterItem(ctx, file, srcRootAncestor.Id, false, false, false, false, true, true);
-                //if (FindNode(ctx, file, ancestor.Id, ref ancestor) < 0) return false; // if error abort
-                //if (ancestor == null) return false; // if error abort
-                // create custom root ancesotor tree
-                ancestor.tree = new LineageRegister();
-                LineageRegister.InitializeCustomLineageTree(ctx, file, ancestor.tree, ancestor);
-                // now migrate the true descendants from original source into this new custom lineage register
-                if (!srcRootAncestor.tree.MoveDescendants(ancestor, false, ancestor)) return false; // if error abort
-                if (!srcRootAncestor.tree.Remove(ancestor)) return false; // if error abort
-            }
-            return true;
-        }
         #endregion 
     }
 
     public class ChildrenRegister
     {
         public RegisterItem? parent;
+        
+        public RegisterItem? first;
         public RegisterItem? current;
+        public RegisterItem? last;
+
 
         // vhd handle and configuration which is to be used whenever operating this double linked list engine
         public OpenFSDBContext? ctx = null;
@@ -2070,6 +1876,7 @@ namespace TheBook.Net.Core
             }
         }
 
+        /*
         public RegisterItem? this[int index]
         {
             get
@@ -2085,54 +1892,10 @@ namespace TheBook.Net.Core
                 //node = value;
             }
         }
-
-        private RegisterItem? GetAt(int index)
-        {
-            if (index >= parent.childrenCount) return null;
-            if (parent.firstChildId == 0) return null; // there are no children so abort 
-            if (current == null) current = First();
-
-            // reset
-            RegisterItem? original = current;
-            current = null;
-
-            RegisterItem? item = null;
-            for (int i = 0; i < index; i++)
-            {
-                // calculate position in stream and directly get the node by offset/position
-                item = Next();
-                if (item == null) break; // end of stream abort from loop
-            }
-            current = original;
-            return item;
-        }
-        public bool DeleteAt(int index, ref RegisterItem? emptySlotsItem, bool withoutEmptySlotsRegister)
-        {
-            if (ctx.readOnly) return false;
-            if (index >= parent.childrenCount) return false;
-            if (parent.firstChildId == 0) return false; // there are no children so abort 
-            if (current == null) current = First();
-
-            // reset
-            RegisterItem? original = current;
-            current = null;
-
-            RegisterItem? item = null;
-            for (int i = 0; i < index; i++)
-            {
-                // calculate position in stream and directly get the node by offset/position
-                item = Next();
-                if (item == null) break; // end of stream abort from loop
-            }
-            current = original;
-            if (item != null)
-                return Delete(item, ref emptySlotsItem, withoutEmptySlotsRegister);
-
-            return false;
-        }
+        */
 
         // this method deletes the node from parent's register and adds it to unused slots register if required
-        public bool Delete(RegisterItem item, ref RegisterItem? emptySlotsItem, bool withoutEmptySlotsRegister)
+        public bool Delete(RegisterItem item, ref RegisterItem? emptySlotsItem, bool withoutEmptySlotsRegister, bool isEmptySlot)
         {
             /* first reload parent current config
              * if item's offset is head then this is first node
@@ -2154,136 +1917,42 @@ namespace TheBook.Net.Core
 
             // phase 1 - get parent's current configuration and item from register
             if (ctx.readOnly) return false;
-            if (parent.firstChildId == 0) return false; // error there is no child in this parent, abort with error
+
+            Register.FindNode(ctx, registerFile, item.Id, ref item);
+            parent = Register.LoadSetupRegisterItem(ctx, registerFile, parent.Id, false, false, false, false, true, true);
+
+            if (parent.headId == 0) return false; // error there is no child in this parent, abort with error
             if (item.parentId != parent.Id) return false; // error this item is not in this parent
 
-            // phase 2 - get both head and tail items
-            RegisterItem? head = null;
-            RegisterItem? tail = null;
-            if (parent.firstChildId != 0) Register.FindNode(ctx, registerFile, parent.firstChildId, ref head);
-            if (parent.lastChildId != 0) Register.FindNode(ctx, registerFile, parent.lastChildId, ref tail);
-
-            // phase 3 - get this node's previous and next nodes in chain
-            RegisterItem? prev = null;
-            RegisterItem? next = null;
-            if (item.previousSiblingId != 0) Register.FindNode(ctx, registerFile, item.previousSiblingId, ref prev);
-            if (item.nextSiblingId != 0) Register.FindNode(ctx, registerFile, item.nextSiblingId, ref next);
-
-            // phase 4 - decide and do
-            if (item.Id == parent.firstChildId && item.Id == parent.lastChildId)
+            // phase 2 - remove from parent tree sequence and parent's register
+            if (!isEmptySlot)
             {
-                // this item is head node and one and only first node there is no other node
-
-                // delete node and register in empty slots system node register or simply complete delete()
-                RegisterItem? newEmptySlotItem = null;
-                if (withoutEmptySlotsRegister)
-                {
-                    if (!Register.DeleteNode(ctx, registerFile, item))
-                        return false; // if error abort with error
-                }
-                else
-                {
-                    if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlotsItem, item.Id, ref newEmptySlotItem))
-                    {
-                        return false; // error abort
-                    }
-                }
-
-                // finally update parent node
-                parent.firstChildId = 0;
-                parent.lastChildId = 0;
-                parent.childrenCount--;
-                Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
-                // no more child node left so both head and tail are 0
-
+                if (!parent.tree.Remove(item)) return false;
+                Register.FindNode(ctx, registerFile, item.Id, ref item);
+                parent = Register.LoadSetupRegisterItem(ctx, registerFile, parent.Id, false, false, false, false, true, true);
             }
-            else if (item.Id == parent.firstChildId && item.Id != parent.lastChildId)
+
+            if (!Remove(item)) return false; // remove from children
+
+            // phase 3 - delete node and register in empty slots system node register or simply complete delete()
+            RegisterItem? newEmptySlotItem = null;
+            if (withoutEmptySlotsRegister)
             {
-                // this item is head node or the first node but not the tail node, so there are 2+ nodes
-
-                // delete node and register in empty slots system node register or simply complete delete()
-                RegisterItem? newEmptySlotItem = null;
-                if (withoutEmptySlotsRegister)
-                {
-                    if (!Register.DeleteNode(ctx, registerFile, item))
-                        return false; // if error abort with error
-                }
-                else
-                {
-                    if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlotsItem, item.Id, ref newEmptySlotItem))
-                    {
-                        return false; // error abort
-                    }
-                }
-
-                // configure this node's next linked node and update it
-                next.previousSiblingId = 0; // because there is no previous node
-                Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                parent.firstChildId = next.Id; // next node becomes the first node or the head
-                parent.childrenCount--;
-                Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
-
-            }
-            else if (item.Id == parent.lastChildId && item.Id != parent.firstChildId)
-            {
-                // this item is tail or the last node but there is a different head, head and tail 2 or more nodes means there are
-                // 2+ nodes, tail can be 2nd node or 3rd or 3+ node
-
-                // delete node and register in empty slots system node register or simply complete delete()
-                RegisterItem? newEmptySlotItem = null;
-                if (withoutEmptySlotsRegister)
-                {
-                    if (!Register.DeleteNode(ctx, registerFile, item))
-                        return false; // if error abort with error
-                }
-                else
-                {
-                    if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlotsItem, item.Id, ref newEmptySlotItem))
-                    {
-                        return false; // error abort
-                    }
-                }
-
-                // we update the previous node in chain remove this node's link and set the previous node as tail
-                prev.nextSiblingId = 0; // because previous node becomes tail or the last node and there is no next node
-                Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                parent.lastChildId = prev.Id; // prev node becomes the last node or the tail. it is also already head if it is first node
-                parent.childrenCount--;
-                Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
+                if (!Register.DeleteNode(ctx, registerFile, item.Id))
+                    return false; // if error abort with error
             }
             else
             {
-                // this item is neither head nor tail node means this node is a middle node which exists between the node chain
+                if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlotsItem, item.Id, ref newEmptySlotItem))
+                    return false; // error abort
+            }
 
-                // delete node and register in empty slots system node register or simply complete delete()
-                RegisterItem? newEmptySlotItem = null;
-                if (withoutEmptySlotsRegister)
-                {
-                    if (!Register.DeleteNode(ctx, registerFile, item))
-                        return false; // if error abort with error
-                }
-                else
-                {
-                    if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlotsItem, item.Id, ref newEmptySlotItem))
-                    {
-                        return false; // error abort
-                    }
-                }
-
-                // now join both prev and next nodes into each other and remove the deleted node links
-                prev.nextSiblingId = next.Id; // previous's next is deleted node's next, we join both
-                next.previousSiblingId = prev.Id; // next's previous is deleted node's previous, we join both
-                // deleted node's links removed now update both nodes
-                Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
-                Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                parent.childrenCount--;
-                Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
+            // phase 4 - change in root
+            if (!isEmptySlot)
+            {
+                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, registerFile, 0, false, false, false, false, true, true);
+                root.usedSlots -= 1;
+                Register.UpdateNode(ctx, registerFile, root, 0, false, 0, false, 0, false);
             }
             return true;
         }
@@ -2309,14 +1978,16 @@ namespace TheBook.Net.Core
 
             // phase 1 - get parent's current configuration and item from register
             if (ctx.readOnly) return false;
-            if (parent.firstChildId == 0) return false; // error there is no child in this parent, abort with error
             if (item.parentId != parent.Id) return false; // error this item is not in this parent
+
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+            if (parent.headId == 0) return false; // error there is no child in this parent, abort with error
 
             // phase 2 - get both head and tail items
             RegisterItem? head = null;
             RegisterItem? tail = null;
-            if (parent.firstChildId != 0) Register.FindNode(ctx, registerFile, parent.firstChildId, ref head);
-            if (parent.lastChildId != 0) Register.FindNode(ctx, registerFile, parent.lastChildId, ref tail);
+            if (parent.headId != 0) Register.FindNode(ctx, registerFile, parent.headId, ref head);
+            if (parent.tailId != 0) Register.FindNode(ctx, registerFile, parent.tailId, ref tail);
 
             // phase 3 - get this node's previous and next nodes in chain
             RegisterItem? prev = null;
@@ -2325,7 +1996,7 @@ namespace TheBook.Net.Core
             if (item.nextSiblingId != 0) Register.FindNode(ctx, registerFile, item.nextSiblingId, ref next);
 
             // phase 4 - decide and do
-            if (item.Id == parent.firstChildId && item.Id == parent.lastChildId)
+            if (item.Id == parent.headId && item.Id == parent.tailId)
             {
                 // this item is head node and one and only first node there is no other node
 
@@ -2335,14 +2006,14 @@ namespace TheBook.Net.Core
                 Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
 
                 // finally update parent node
-                parent.firstChildId = 0;
-                parent.lastChildId = 0;
+                parent.headId = 0;
+                parent.tailId = 0;
                 parent.childrenCount--;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
                 // no more child node left so both head and tail are 0
 
             }
-            else if (item.Id == parent.firstChildId && item.Id != parent.lastChildId)
+            else if (item.Id == parent.headId && item.Id != parent.tailId)
             {
                 // this item is head node or the first node but not the tail node, so there are 2+ nodes
 
@@ -2356,12 +2027,12 @@ namespace TheBook.Net.Core
                 Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
 
                 // finally update parent node
-                parent.firstChildId = next.Id; // next node becomes the first node or the head
+                parent.headId = next.Id; // next node becomes the first node or the head
                 parent.childrenCount--;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
 
             }
-            else if (item.Id == parent.lastChildId && item.Id != parent.firstChildId)
+            else if (item.Id == parent.tailId && item.Id != parent.headId)
             {
                 // this item is tail or the last node but there is a different head, head and tail 2 or more nodes means there are
                 // 2+ nodes, tail can be 2nd node or 3rd or 3+ node
@@ -2376,7 +2047,7 @@ namespace TheBook.Net.Core
                 Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
 
                 // finally update parent node
-                parent.lastChildId = prev.Id; // prev node becomes the last node or the tail. it is also already head if it is first node
+                parent.tailId = prev.Id; // prev node becomes the last node or the tail. it is also already head if it is first node
                 parent.childrenCount--;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
             }
@@ -2407,18 +2078,14 @@ namespace TheBook.Net.Core
         {
             // validation
             if (ctx.readOnly) return false;
-            if (parent.firstChildId == 0) return false; // error there is no child in this parent, abort with error
+            if (parent.headId == 0) return false; // error there is no child in this parent, abort with error
             if (item.parentId != parent.Id) return false; // error this item is not in this parent
 
             // validations
             if (targetParent.childrenCount >= Register.default_maxChildrenNodes)
                 return false;
 
-            // firstly remove the item from this parent
-            if (!Remove(item)) return false; // error item not removed from parent
-
-            // nextly insert this item into target parent
-            return targetParent.children.Add(item, targetParent);
+            return Register.MoveParentProper(ctx, registerFile, item, targetParent.Id);
         }
         // this method inserts a node in the registry by id
         public RegisterItem? Add(myNode node, ref RegisterItem? parentNewStateOut)
@@ -2429,14 +2096,14 @@ namespace TheBook.Net.Core
             // finally update the register add this node
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 parent.Id, node.DirectorySectionID, 0, 0, 0, 0, 0,
-                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0, 0, 0, 0);
-            if (Add(item, parentNewStateOut))
+                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0);
+            if (Add(item))
                 return item;
             else
                 return null;
         }
 
-        public bool Add(RegisterItem? item, RegisterItem? parent)
+        public bool Add(RegisterItem? item)
         {
             // if 1st child, insert at head and tail, update
             // if 2nd forth child, insert at tail, update tail
@@ -2444,11 +2111,7 @@ namespace TheBook.Net.Core
             // update previous node's next node offset to this next node.
             if (ctx.readOnly) return false;
 
-            // validations
-            //if (parent.childrenCount >= Register.default_maxChildrenNodes)
-            //    return false;
-
-            this.parent = parent;
+            parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, parent.Id, true, false, false, false, true, true);
 
             if (parent.childrenCount == 0)
             {
@@ -2460,8 +2123,8 @@ namespace TheBook.Net.Core
                 if (newItemOffset < 0) return false; // critical error abort with error
 
                 // finally update parent node
-                parent.firstChildId = item.Id;
-                parent.lastChildId = item.Id;
+                parent.headId = item.Id;
+                parent.tailId = item.Id;
                 parent.childrenCount++;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
                 // done
@@ -2470,7 +2133,7 @@ namespace TheBook.Net.Core
             {
                 // get head
                 RegisterItem? head = null;
-                Int64 headOffset = Register.FindNode(ctx, registerFile, parent.firstChildId, ref head);
+                Int64 headOffset = Register.FindNode(ctx, registerFile, parent.headId, ref head);
                 if (headOffset < 0) return false; // critical error abort with error
 
                 // this is a 2nd node to be inserted, there is 1 first node which is head. so we set tail as this node.
@@ -2485,7 +2148,7 @@ namespace TheBook.Net.Core
                 Register.UpdateNode(ctx, registerFile, head, 0, false, 0, false, 0, false);
 
                 // finally update parent node
-                parent.lastChildId = item.Id;
+                parent.tailId = item.Id;
                 parent.childrenCount++;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
             }
@@ -2494,7 +2157,7 @@ namespace TheBook.Net.Core
                 // this is 3+ index child so insert it as tail and update the previous tail cum last item with this new item
                 // get tail
                 RegisterItem? tail = null;
-                Int64 tailOffset = Register.FindNode(ctx, registerFile, parent.lastChildId, ref tail);
+                Int64 tailOffset = Register.FindNode(ctx, registerFile, parent.tailId, ref tail);
                 if (tailOffset < 0) return false; // critical error abort with error
 
                 // update and insert this node with new configuration
@@ -2509,7 +2172,7 @@ namespace TheBook.Net.Core
                 Register.UpdateNode(ctx, registerFile, tail, 0, false, 0, false, 0, false);
 
                 // finally update parent node
-                parent.lastChildId = item.Id;
+                parent.tailId = item.Id;
                 parent.childrenCount++;
                 Register.UpdateNode(ctx, registerFile, parent, 0, false, 0, false, 0, false);
                 // done
@@ -2518,241 +2181,98 @@ namespace TheBook.Net.Core
             // success
             return true;
         }
-        public void Reset()
-        {
-            current = null;
-        }
 
+        // get first child of parent
         public RegisterItem? First()
         {
-            if (parent.firstChildId == 0) return null;
-            Register.FindNode(ctx, registerFile, parent.firstChildId, ref current);
+            // get first head child in parent which should be first head in tree sequence of parent
+            // note that if there is a single child then both head and tail and current are same item.
+            if (parent.headId == 0) return null;
+            Register.FindNode(ctx, registerFile, parent.headId, ref first);
+            Register.FindNode(ctx, registerFile, parent.tailId, ref last);
+            current = first;
             return current;
         }
+        // get last child of parent
         public RegisterItem? Last()
         {
-            if (parent.lastChildId == 0) return null;
-            Register.FindNode(ctx, registerFile, parent.lastChildId, ref current);
+            // get tail child in parent which should be last child in parent
+            // note that if there is a single child then both head and tail and current are same item.
+            if (parent.headId == 0) return null;
+            Register.FindNode(ctx, registerFile, parent.headId, ref first);
+            Register.FindNode(ctx, registerFile, parent.tailId, ref last);
+            current = last;
             return current;
         }
         
         // we get all children
         public bool GetChildren(ref List<RegisterItem>? listOut, bool loadNode)
         {
-            Int64 nextSiblingId = -1;
-
-            RegisterItem? current = null;
+            RegisterItem? original = current;
 
             List<RegisterItem>? list = new List<RegisterItem>();
             listOut = list;
 
-            // we must reload to get latest configuration of the parent
-            reloadConfig();
-
-            if (parent.firstChildId == 0) return true; // there are no children so abort and return empty list
-
-            // get the head
-            if (Register.FindNode(ctx, registerFile, parent.firstChildId, ref current) < 0)
-                return false; // end of chain or error or no children present in parent, abort
-
-            if (current == null)
-                return false; // there is no child node present so abort
-
-            nextSiblingId = current.Id;
-
+            // there are children, iterate through them and find valid nodes
+            current = null;
             while (true)
             {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextSiblingId, ref nextItem);
-                if (nextOffset < 0) break; // error or end of stream or end of register so break
-                if (nextItem == null) break; // no more items so break
+                RegisterItem? nextItem = Next();
+                if (nextItem == null) break;
 
-                String rtf = "";
-                byte[]? xamlbytesOut = null;
-                if (loadNode) 
-                    nextItem.loadNode(ctx, ref rtf, ref xamlbytesOut, false);
+                String? rtf = "";
+                byte[]? xaml = null;
+                if (loadNode)
+                    nextItem.loadNode(ctx, ref rtf, ref xaml, loadNode);
 
-                // add item to list
-                list.Add(nextItem);
-
-                // configure
-                nextSiblingId = nextItem.nextSiblingId;
-
-                // check if end of children register reached
-                if (nextItem.nextSiblingId == 0) break;
+                list.Add(nextItem); // yes this is a child and exists under parent
             }
-            // output
+            current = original;
             listOut = list;
             return true;
         }
-
-        // we get next demanded cache of sequence of items from register from the current item passed as parameter
-        public RegisterItem? NextCache(int total, RegisterItem? current, ref List<RegisterItem>? listOut)
-        {
-            Int64 nextSiblingId = -1;
-            if (total < 1) total = 1000; // auto set total 1000 if user does not passes param total
-
-            List<RegisterItem>? list = new List<RegisterItem>();
-            listOut = list;
-
-            // we must reload to get latest configuration of the parent
-            reloadConfig();
-
-            if (parent.firstChildId == 0) return null; // there are no children so abort and return empty list
-
-            if (current == null)
-            {
-                // current is not loaded, so get first head node as current
-                if (Register.FindNode(ctx, registerFile, parent.firstChildId, ref current) < 0)
-                    return null; // end of chain or error or no children present in parent, abort
-
-                nextSiblingId = current.Id;
-            }
-            else
-            {
-                // current is already loaded so proceed with it's next sibling
-                if (current.nextSiblingId == 0) return null; // end of chain, abort
-
-                // get next sibling offset
-                nextSiblingId = current.nextSiblingId;
-            }
-
-            if (current == null)
-                return null; // there is no child node present so abort
-
-            // we take next 1000 or cache number nodes if available 1000 or cache or more, otherwise whatever we can get less then 1000 and return the list
-            // with the last node as returned tail
-            RegisterItem? tail = null; // last item which was found
-
-            for (int i = 0; i < total; i++)
-            {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextSiblingId, ref nextItem);
-                if (nextOffset < 0) break; // error or end of stream or end of register so break
-                if (nextItem == null) break; // no more items so break
-
-                // set tail this next item because it was found
-                tail = nextItem;
-
-                // configure
-                nextSiblingId = nextItem.nextSiblingId;
-
-                // add item to list
-                list.Add(nextItem);
-            }
-            // output
-            listOut = list;
-            return tail;
-        }
-
         public RegisterItem? Next()
         {
-            Int64 nextSiblingId = -1;
-
-            if (parent.firstChildId == 0) return null; // there are no children so abort and return empty list
-
             if (current == null)
             {
                 // current is not loaded, so get first head node as current
-                //current = Register.LoadSetupRegisterItem(ctx, registerFile, parent.firstChildId, false, false, false);
-                //if (current == null)
-                if (Register.FindNode(ctx, registerFile, parent.firstChildId, ref current) < 0)
-                    return null; // end of chain or error or no children present in parent, abort
-
-                nextSiblingId = current.Id;
-            }
-            else
-            {
-                // current is already loaded so proceed with it's next sibling
-                if (current.nextSiblingId == 0) return null; // end of chain, abort
-
-                // get next sibling offset
-                nextSiblingId = current.nextSiblingId;
+                return First();
             }
 
-            if (current == null)
-                return null; // there is no child node present so abort
+            // get and set next of current
+            if (current.nextSiblingId == 0) return null; // eof return null
 
+            // get next 
+            RegisterItem? item = null;
             // load item from registry
-            RegisterItem? nextItem = null;
-            //nextItem = Register.LoadSetupRegisterItem(ctx, registerFile, nextSiblingId, false, false, false);
-            //if (nextItem == null)
-            //    return null; // critical error abort with null
-
-            Int64 nextOffset = Register.FindNode(ctx, registerFile, nextSiblingId, ref nextItem);
-            if (nextOffset < 0) return null; // critical error abort with null
-
-            // reconfigure current and set next item into it and return it as the next item in register
-            current = nextItem;
+            Int64 offset = Register.FindNode(ctx, registerFile, current.nextSiblingId, ref item);
+            if (offset < 0) return null; // no more nodes or error so break
+            current = item;
             return current;
         }
 
         public RegisterItem? Previous()
         {
-            Int64 prevSiblingId = -1;
-
-            if (parent.firstChildId == 0) return null; // there are no children so abort and return empty list
-
             if (current == null)
             {
-                // current is not loaded, so get last tail node as current
-                //current = Register.LoadSetupRegisterItem(ctx, registerFile, parent.lastChildId, false, false, false);
-                //if (current == null)
-                if (Register.FindNode(ctx, registerFile, parent.lastChildId, ref current) < 0)
-                    return null; // end of chain or error or no children present in parent, abort
-
-                prevSiblingId = current.Id;
-            }
-            else
-            {
-                // current is already loaded so proceed with it's previous sibling
-                if (current.previousSiblingId == 0) return null; // end of chain, abort
-
-                // get prev offset
-                prevSiblingId = current.previousSiblingId;
+                // current is not loaded, so get first head node as current
+                return Last();
             }
 
-            if (current == null)
-                return null; // there is no child node present so abort
+            // get and set prev of current
+            if (current.previousSiblingId == 0) return null; // eof return null
 
+            // get next 
+            RegisterItem? item = null;
             // load item from registry
-            RegisterItem? prevItem = null;
-            //prevItem = Register.LoadSetupRegisterItem(ctx, registerFile, prevSiblingId, false, false, false);
-            //if (prevItem == null)
-            //    return null; // critical error abort with null
-
-            Int64 prevOffset = Register.FindNode(ctx, registerFile, prevSiblingId, ref prevItem);
-            if (prevOffset < 0) return null; // critical error abort with null
-
-            // reconfigure current and set prev item into it and return it as the prev item in register
-            current = prevItem;
+            Int64 offset = Register.FindNode(ctx, registerFile, current.previousSiblingId, ref item);
+            if (offset < 0) return null; // no more nodes or error so break
+            current = item;
             return current;
         }
-
-        public bool reloadConfig()
+        public void Reset()
         {
-            // original: //parent = Register.LoadSetupRegisterItem(ctx, registerFile, parent.Id, false, false, false);
-            //if (parent == null) return false;
-            if (Register.FindNode(ctx, registerFile, parent.Id, ref parent) < 0) return false; // critical error
-            if (parent == null) return false; // critical error
-
-            return true;
-        }
-        public void SetLatestState(OpenFSDBContext? ctx, String registerFile, RegisterItem state, bool reset)
-        {
-            // configure and setup
-            this.ctx = ctx;
-            this.registerFile = registerFile;
-            if (reset) this.current = null;
-            this.parent = state;
-        }
-        public void SetLatestState(RegisterItem state, bool reset)
-        {
-            // configure and setup
-            if (reset) this.current = null;
-            this.parent = state;
+            current = first = last = null;
         }
 
         public static bool Initialize(OpenFSDBContext? ctx, String registerFile,
@@ -2762,7 +2282,7 @@ namespace TheBook.Net.Core
 
             list.ctx = ctx;
             list.registerFile = registerFile;
-            list.current = null;
+            list.current = list.first = list.last = null;
 
             // directly setup count from parent item
             list.parent = parentItem;
@@ -2771,674 +2291,285 @@ namespace TheBook.Net.Core
 
     }
 
-    public class LineageRegister
+    public class TreeSequenceRegister
     {
-        /*
-         * 30 December 2024, 03-37-am: technical knowledge
-         * we can do endless recursion from the root child node throughout the tree which is sequentially
-         * chained into the root child node. root child node or the Adam and entire tree exists on Adam 
-         * even if it contains millions of nodes. we use absolute ids as binding links. root child node Adam 
-         * contains lineageHead and lineageTail and lineageNextNode and lineagePreviousNode and lineageNodesCount, 
-         * these properties define the doubly linked list chain same or similar as in ChildrenRegister. but it should be exaustive and 
-         * intensive in operations as we need to iterate through every lineage node. sequential id based chaining.
-         * the truth is that a child node anywhere in the lineage tree cannot be created unless it's parent and all ancestors truly exist.
-         * in this way all tree is binded as a sequential chain. to delete any node anywhere then we remove it from it's parent and from the lineage most properly
-         * then finally delete-empty the node and or register it with empty slots register if demanded. to insert the node the node is 
-         * added in the very last id whatever available and is inserted last in parent as tail and in lineage as tail.
-         * to get all the ancestors the node is traversed from bottom to top by jumping from ancestor (parent) to ancestor (parent) right to the top
-         * root child or the Adam. in this way only we can traverse the lineage. we may add root child Adam's id as root property in all the lineage nodes.
-         * to delete a child item recursively involves validating all lineage below the item that every child has this item as ancestor, then we delete the item
-         * by first removing the children from parent and then from lineage and then finally delete-empty the children.
-         * to move from this lineage to another lineage, parent is removed from lineage and added into tail of the other lineage first of all. 
-         * then starting from head which is property of root child Adam node, we traverse all the tree down to the tail, and which ever node is 
-         * first in sequence and exists under the parent node is delinked-removed from lineage and inserted to the other lineage at tail. this is
-         * a proper sequence. we grab the next and previous nodes before removing the node from lineage, then we rewind to the previous node and proceed with latest 
-         * config and traverse all lineage upto the tail. whatsoever node which is not child or descendant of target parent and is external to the parent is 
-         * not modified and remains unchanged and unaffected.
-         * when we insert new node it is inserted at the tail and root child's head and or tail are affected and changed.
-         * */
-        public RegisterItem? rootAncestor;
-        public RegisterItem? parent;
-        public RegisterItem? current;
+        public RegisterItem? parent = null;
+        public RegisterItem? current = null;
+        public RegisterItem? first = null;
+        public RegisterItem? last = null;
 
         // vhd handle and configuration which is to be used whenever operating this double linked list engine
         public OpenFSDBContext? ctx = null;
         public String registerFile = "";
 
-        public LineageRegister()
+        public TreeSequenceRegister()
         {
         }
         public long Count
         {
             get
             {
-                return rootAncestor.descendantsCount;
+                // fetch latest parent state
+                Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+
+                return parent.childrenCount;
             }
         }
-        public void Reset()
+        // traverses and finds and loads the absolute last tree sequence node under an ancestor
+        public RegisterItem? GetAbsoluteLastTreeSequenceTail()
         {
-            current = null;
-        }
+            if (parent == null) return null;
 
-        public void autoFill()
-        {
+            // fetch latest parent state
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
 
-        }
+            // check if there is any tree in this parent
+            if (parent.childrenCount == 0)
+                return null; // no tree in this parent so return null
 
-        public bool Remove(RegisterItem item)
-        {
-            /* first reload parent current config
-             * if item's offset is head then this is first node
-             * if item's offset is not head but tail then this is 2nd or 3rd or 2+ indexed child node
-             * if item's offset is tail then this is last node
-             * if item is both head and tail then this is first and one and only node
-             * if item's offset is none of head and tail then this is middle node which has previous and next nodes in chain and it 
-             * exists between them.
-             * if item is niether head nor tail then this is middle node which is in between first and last head and tail nodes.
-             * if item is middle node then delete the item and delete it's links from both next and previous nodes and join them into each other.
-             * if item is tail then delete the item and remove it's link from previous node set it to 0 and update parent set it's tail previous item
-             * if item is head remove the item and remove it's link from parent head set it to 0 and update parent
-             * if item is head but there is a different tail, then there are 2+ items, delete the node and set next node as head and remove link from next node
-             * tail can be any other node 2nd 3rd thousandth. head is first node and next to head node is the 2nd node in chain. so when we delete head node
-             * then the next node becomes head. tail can be any other node it is last node even a millionth node can be tail.
-             * there are only 2 nodes head and tail when tail's previous node is head by offset. when we delete the tail the previous node's next is set to 0
-             * because there is no more nodes and the tail becomes the previous node.
-             */
+            // there is a tree in this parent
 
-            // phase 1 - get parent's current configuration and item from register
-            if (ctx.readOnly) return false;
-            if (rootAncestor.treeHeadId == 0) return false; // error there is no child in this parent, abort with error
-            if (item.treeRootId != rootAncestor.Id) return false; // error this item is not in this parent
+            // note that a tree sequence tail is actually the children and in them the last registered child in tree sequence of parent.
 
-            // phase 2 - get both head and tail items
-            RegisterItem? head = null;
+            // if this parent is emptySlot system core node, then take it.
+            if (parent.nodeType == NodeType.EmptySlot && parent.specialNodeType == SpecialNodeType.SystemNode)
+                return parent; // empty slot core node
+
+            // first get the initial tail and it's parent
             RegisterItem? tail = null;
-            if (rootAncestor.treeHeadId != 0) Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref head);
-            if (rootAncestor.treeTailId != 0) Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref tail);
+            Register.FindNode(ctx, registerFile, parent.tailId, ref tail);
 
-            // phase 3 - get this node's previous and next nodes in chain
-            RegisterItem? prev = null;
-            RegisterItem? next = null;
-            if (item.previousDescendantId != 0) Register.FindNode(ctx, registerFile, item.previousDescendantId, ref prev);
-            if (item.nextDescendantId != 0) Register.FindNode(ctx, registerFile, item.nextDescendantId, ref next);
+            // if this tail is emptySlot system, then deny chaining it.
+            if (tail.nodeType == NodeType.EmptySlot && tail.specialNodeType == SpecialNodeType.SystemNode)
+                return tail; // empty slot node, deny it.
 
-            // phase 4 - decide and do
-            if (item.Id == rootAncestor.treeHeadId && item.Id == rootAncestor.treeTailId)
+            if (tail.childrenCount == 0)
             {
-                // this item is head node and one and only first node there is no other node
-
-                // first edit the item
-                item.treeRootId = -1;
-                item.previousDescendantId = item.nextDescendantId = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.treeHeadId = 0;
-                rootAncestor.treeTailId = 0;
-                rootAncestor.descendantsCount--;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-                // no more child node left so both head and tail are 0
-
+                // tail has no further children means tree sequence
+                return tail;
             }
-            else if (item.Id == rootAncestor.treeHeadId && item.Id != rootAncestor.treeTailId)
+
+            // tail has a tree so loop through it 
+            while (true)
             {
-                // this item is head node or the first node but not the tail node, so there are 2+ nodes
+                // load next tail child from this current parent tail child
+                if (tail.tailId == 0) break; // no further tree this is the last final tree sequence tail so break;
+                if (tail.childrenCount == 0) break; // no further tree this is the last final tree sequence tail so break;
+                // there is still a tree this bottom so iterate to the next tree sequence tail
+                Register.FindNode(ctx, registerFile, tail.tailId, ref tail);
+                if (tail == null) break;
 
-                // first edit the item
-                item.treeRootId = -1;
-                item.previousDescendantId = item.nextDescendantId = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // configure this node's next linked node and update it
-                next.previousDescendantId = 0; // because there is no previous node
-                Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.treeHeadId = next.Id; // next node becomes the first node or the head
-                rootAncestor.descendantsCount--;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-
+                // if this absolute last tail is emptySlot system, then deny chaining it.
+                if (tail.nodeType == NodeType.EmptySlot)
+                    return null; // empty slot core node or empty slot node, deny it.
             }
-            else if (item.Id == rootAncestor.treeTailId && item.Id != rootAncestor.treeHeadId)
-            {
-                // this item is tail or the last node but there is a different head, head and tail 2 or more nodes means there are
-                // 2+ nodes, tail can be 2nd node or 3rd or 3+ node
 
-                // first edit the item
-                item.treeRootId = -1;
-                item.previousDescendantId = item.nextDescendantId = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
+            // here we have the absolute last tree sequence tail node. return tail;
+            return tail;
+        }
 
-                // we update the previous node in chain remove this node's link and set the previous node as tail
-                prev.nextDescendantId = 0; // because previous node becomes tail or the last node and there is no next node
-                Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
+        // add an item in the last of parent's tree sequence
+        public RegisterItem? Add(myNode? node)
+        {
+            if (ctx.readOnly) return null;
+            if (node == null) return null;
+            if (node.chapter == null) return null;
 
-                // finally update parent node
-                rootAncestor.treeTailId = prev.Id; // prev node becomes the last node or the tail. it is also already head if it is first node
-                rootAncestor.descendantsCount--;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-            }
+            // finally update the register add this node
+            RegisterItem? item = new RegisterItem(0, node.chapter.Id,
+                parent.Id, node.DirectorySectionID, 0, 0, 0, 0, 0, node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType,
+                RegisterItemFlags1.None, 0, 0, 0);
+            if (Add(item))
+                return item;
             else
-            {
-                // this item is neither head nor tail node means this node is a middle node which exists between the node chain
-
-                // first edit the item
-                item.treeRootId = -1;
-                item.previousDescendantId = item.nextDescendantId = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // now join both prev and next nodes into each other and remove the deleted node links
-                prev.nextDescendantId = next.Id; // previous's next is deleted node's next, we join both
-                next.previousDescendantId = prev.Id; // next's previous is deleted node's previous, we join both
-                // deleted node's links removed now update both nodes
-                Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
-                Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.descendantsCount--;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-            }
-            return true;
-        }
-        // this method removes the item from this root ancestor and inserts/moves it to the another root ancestor
-        public bool Move(RegisterItem item, ref RegisterItem targetRootAncestor)
-        {
-            // validation
-            if (ctx.readOnly) return false;
-            if (rootAncestor.treeHeadId == 0) return false; // error there is no child in this parent, abort with error
-            if (item.treeRootId != rootAncestor.Id) return false; // error this item is not in this parent
-
-            // firstly remove the item from this parent
-            if (!Remove(item)) return false; // error item not removed from parent
-
-            // nextly insert this item into target parent
-            return targetRootAncestor.tree.Add(item);
-        }
-        // this special method removes the root ancestor item and inserts/moves it to the another root ancestor
-        public bool MoveRootAncestor(ref RegisterItem targetRootAncestor)
-        {
-            // firstly remove the item from this parent
-            if (ctx.readOnly) return false;
-            rootAncestor.treeRootId = -1;
-            rootAncestor.previousDescendantId = rootAncestor.nextDescendantId = rootAncestor.treeHeadId = rootAncestor.treeTailId = 
-                rootAncestor.descendantsCount = 0;
-            Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-
-            // nextly insert this item into target parent
-            return targetRootAncestor.tree.Add(rootAncestor);
+                return null;
         }
 
+        // add an item in the last of parent's tree sequence
         public bool Add(RegisterItem? item)
         {
-            // if 1st child, insert at head and tail, update
-            // if 2nd forth child, insert at tail, update tail
-            // update parent's configuration - first if 1st node, or last child if last last node
-            // update previous node's next node offset to this next node.
-            //this.rootAncestor = rootAncestor;
-            //this.parent = parent;
-
             if (ctx.readOnly) return false;
-            if (rootAncestor.descendantsCount == 0)
+            if (parent == null) return false;
+
+            /* 1. load latest parent state
+             * 2. find if parent has tree. if parent is empty directly use parent.
+             * 3. if parent is not empty then find absolute last tail by jumping from every child to a dead end.
+             * 4. join the absolute last tail to new node and join new node's next to original previous next pointer of the final tail.
+             * 5. update parent's tail to this new inserted item 
+             * */
+
+            // 1: fetch latest parent state
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+
+            // 2: find absolute last tail in parent. if no tail means no tree in parent then take the parent itself.
+            RegisterItem? tail = GetAbsoluteLastTreeSequenceTail();
+            if (tail == null)
+                tail = parent; // if tail is null means parent has no tree, so we setup parent and it's next as this item.
+
+            // fetch original previous next node from tail
+            RegisterItem? nextInSequence = null;
+            if (tail.nextId != 0) Register.FindNode(ctx, registerFile, tail.nextId, ref nextInSequence);
+
+            // 3: join everything
+            tail.nextId = item.Id;
+            item.prevId = tail.Id;
+            item.nextId = 0;
+            if (nextInSequence != null)
             {
-                // this is first child being inserted in the lineage chain, so insert it and it's offset as head and tail both
-                item.treeRootId = rootAncestor.Id;
-                item.previousDescendantId = 0;
-                item.nextDescendantId = 0;
-                item.treeHeadId = item.treeTailId = item.descendantsCount = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.treeHeadId = item.Id;
-                rootAncestor.treeTailId = item.Id;
-                rootAncestor.descendantsCount++;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-                // done
+                // there was a next node in tree sequence, so join it to item
+                item.nextId = nextInSequence.Id;
+                nextInSequence.prevId = item.Id;
             }
-            else if (rootAncestor.descendantsCount == 1)
-            {
-                // get head
-                RegisterItem? head = null;
-                Int64 headOffset = Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref head);
-                if (headOffset < 0) return false; // critical error abort with error
-
-                // this is a 2nd node to be inserted, there is 1 first node which is head. so we set tail as this node.
-                item.treeRootId = rootAncestor.Id;
-                item.previousDescendantId = head.Id;
-                item.nextDescendantId = 0;
-                item.treeHeadId = item.treeTailId = item.descendantsCount = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // update previous head node 
-                head.nextDescendantId = item.Id;
-                Register.UpdateNode(ctx, registerFile, head, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.treeTailId = item.Id;
-                rootAncestor.descendantsCount++;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-            }
-            else
-            {
-                // this is 2nd or any other 2+ index child so insert it as tail and update the previous tail cum last item with this new item
-                // get tail
-                RegisterItem? tail = null;
-                Int64 tailOffset = Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref tail);
-                if (tailOffset < 0) return false; // critical error abort with error
-
-                // update this node with new configuration
-                item.previousDescendantId = tail.Id;
-                item.nextDescendantId = 0;
-                item.treeRootId = rootAncestor.Id;
-                item.treeHeadId = item.treeTailId = item.descendantsCount = 0;
-                Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
-
-                // update previous tail node 
-                tail.nextDescendantId = item.Id;
-                Register.UpdateNode(ctx, registerFile, tail, 0, false, 0, false, 0, false);
-
-                // finally update parent node
-                rootAncestor.treeTailId = item.Id;
-                rootAncestor.descendantsCount++;
-                Register.UpdateNode(ctx, registerFile, rootAncestor, 0, false, 0, false, 0, false);
-                // done
-            }
+            // update all
+            Register.UpdateNode(ctx, registerFile, tail, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, registerFile, nextInSequence, 0, false, 0, false, 0, false);
             // success
             return true;
         }
-        public bool IsDescendantOfAncestor(RegisterItem? item, RegisterItem? ancestor)
+        // remove the item from parent's tree sequence
+        public bool Remove(RegisterItem? item)
         {
-            List<RegisterItem>? lineage = null;
-            Register.Lineage(ctx, registerFile, item, ref lineage, true, false, false);
-            RegisterItem? found = lineage.Find(x => x.Id == ancestor.Id);
-            if (found != null)
-            {
-                // yes current item is descendant of ancestor
-                return true;
-            }
-            // no current item is not a descendant of ancestor
-            return false;
-        }
-
-        // traverses the tree beginning from root child node and finds an ancestor's all descendants recursively
-        public bool MoveDescendants(RegisterItem? ancestor, bool moveAncestor, RegisterItem? targetRootAncestor)
-        {
-            // reload latest states
             if (ctx.readOnly) return false;
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
+            if (parent == null) return false;
 
-            if (rootAncestor.treeHeadId == 0)
+            /* 1. load latest item and parent state
+             * 2. find if parent has tree. if parent is empty abort with error
+             * 3. load both adjucent nodes of item.
+             * 4. configure both adjucent nodes and the item.
+             * 5. reload item and parent.
+             * 6. finally configure parent. head and tail are to be configured.
+             * 
+             * if children count is 1 then this item is both head and tail so set both to 0.
+             * if children count is 2 then if this item is head then next item is tail, but if this item is tail then previous item is head. so when we remove
+             * from head otherwise from tail then remaining single item is set as both head and tail.
+             * if children count is 3 then if this item is head then next is 2nd and it's next is 3rd which is tail, and if this item is tail then it's previous is 2nd
+             * and it's previous is 1st which is head. so when head we remove it from head and set next as head. so when tail we remove it from tail and set previous as tail.
+             * if neither head nor tail then we just separate and remove the item from adjecent nodes and join them to each other. one of them should be head other should be tail. we
+             * need not configure head and tail they remain unaffected.
+             * if children count is 4 or more then if this item is head then it is ensured that next is not tail and last is tail so there is no need to configure tail we configure
+             * head as the next in line. if this item is tail it is ensured that previous is not head and 1st in line is head so there is no need to configure head so we
+             * configure tail as the previous in line.
+             *  
+             * */
+
+            if (item.Id == 0) return false; // root cannot be removed so return error
+
+            // 1: fetch latest states
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+            Register.FindNode(ctx, registerFile, item.Id, ref item);
+
+            // 2. find if parent has tree. if parent is empty abort with error
+            if (parent.childrenCount == 0) return false;
+
+            // 3. load both adjucent nodes of item.
+            RegisterItem? prev = null;
+            RegisterItem? next = null;
+            Register.FindNode(ctx, registerFile, item.nextId, ref next);
+            Register.FindNode(ctx, registerFile, item.prevId, ref prev);
+
+            // 4.configure both adjucent nodes and the item.
+            item.prevId = item.nextId = 0;
+            if (prev != null)
             {
-                // there are no children so abort and return empty list
-                if (rootAncestor.Id == ancestor.Id) return true; // ancestor is root ancestor itself and there are no children in it, so return true
-                return false; // ancestor is not root ancestor and root ancestor has no children, so return error
-            }
-            if (ancestor.treeRootId == targetRootAncestor.Id) return true; // we cannot move from and to same root child ancestor
-
-            Int64 nextDescendantId = -1;
-
-            RegisterItem? current = null;
-
-            // current is not loaded, so get first head node as current
-            if (Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current) < 0)
-                return false; // end of chain or error or no children present in parent, abort
-
-            if (current == null)
-                return false; // there is no child node present so abort
-
-            nextDescendantId = current.Id;
-
-            /* new unneccesary illogical code ignore 18 Nov 2025
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter bw = new BinaryWriter(ms);
-            BinaryReader br = new BinaryReader(ms);
-
-            // new code - 18 Nov 2025
-            while (true)
-            {
-
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-                if (nextOffset < 0)
-                    break; // error or end of stream or end of register so break
-                if (nextItem == null)
-                    break; // no more items so break
-
-                // configure
-                nextDescendantId = nextItem.nextDescendantId;
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
+                // prev is there so configure it
+                if (next != null)
                 {
-                    // this descendant is ancestor's true descendant, so queue it
-                    bw.Write(nextItem.Id);
-                }
-
-                // check if end of register reached
-                if (nextDescendantId == 0)
-                    break;
-            }
-
-            br.BaseStream.Position = 0;
-            while (true)
-            {
-                RegisterItem? nextItem = null;
-                if (br.PeekChar() == -1) break;
-                Int64 id = br.ReadInt64();
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, id, ref nextItem);
-                if (nextOffset < 0)
-                    break; // error or end of stream or end of register so break
-                if (nextItem == null)
-                    break; // no more items so break
-
-                // this descendant is ancestor's true descendant, so move it to the target root ancestor
-                if (!Move(nextItem, ref targetRootAncestor))
-                    return false; // critical error
-
-
-            }
-            */
-
-            while (true)
-            {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-                if (nextOffset < 0)
-                    break; // error or end of stream or end of register so break
-                if (nextItem == null)
-                    break; // no more items so break
-
-                // configure
-                nextDescendantId = nextItem.nextDescendantId;
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
-                {
-                    // this descendant is ancestor's true descendant, so move it to the target root ancestor
-                    if (!Move(nextItem, ref targetRootAncestor))
-                        return false; // critical error
-                }
-
-                // check if end of register reached
-                if (nextDescendantId == 0)
-                    break;
-            }
-            
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-
-            // we cannot move ancestor at first we need to move all it's true descendants recursively.
-            // if ancestor is itself a root child Adam, then we cannot move ancestor at first because it destroys the lineage chain's 
-            // configuration if we move the node to another root child Adam's tree. so we need to first move all descendants, then in the last 
-            // the ancestor.
-            if (moveAncestor)
-            {
-                if (ancestor.Id == rootAncestor.Id)
-                {
-                    // ancestor is root ancestor itself, so we move it with special function
-                    return MoveRootAncestor(ref targetRootAncestor);
+                    // next is there so configure previous and next
+                    prev.nextId = next.Id;
                 }
                 else
                 {
-                    // ancestor is not root ancestor but a child in it's tree so we move it with common function
-                    if (!Move(ancestor, ref targetRootAncestor))
-                        return false; // critical error
+                    // no next so set previous's next to 0
+                    prev.nextId = 0;
                 }
             }
-            //current = original;
-            return true;
-        }
-        // this special method removes the root ancestor item from root and deletes it 
-        public bool DeleteRootAncestor(ref RegisterItem? emptySlots, bool withoutEmptySlotsRegister)
-        {
-            // reload latest states
-            if (ctx.readOnly) return false;
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            if (rootAncestor == null) return false; // critical error abort all op
-            if (rootAncestor.specialNodeType == SpecialNodeType.SystemNode) return false;
-
-            // load node
-            String rtf = "";
-            byte[]? xamlbytesOut = null;
-            if (!rootAncestor.loadNode(ctx, ref rtf, ref xamlbytesOut, false)) return false; // abort all op if error loading the node
-
-            // node loaded successfully, proceed
-            // first delete the node files
-            if (!entryMethods.DBPurgeNodeOFSDB(ctx, rootAncestor.node)) return false; // critical error then return error before taking any other action
-
-            // parent root 0 has no lineage tree, so we skip it
-
-            // load latest parent state
-            // root ancestor's parent is absolute root 0
-            RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.parentId, false, false, false, false, true, true);
-            if (parent == null) return false; // critical error abort all op
-
-            // parent root 0 loaded successfully, proceed
-            // third delete the item from parent
-            bool result = parent.children.Delete(rootAncestor, ref emptySlots, withoutEmptySlotsRegister);
-            return result;
-        }
-
-        // this method deletes the item from this root ancestor and inserts it to the empty slots register if demanded
-        public bool DeleteDescendant(RegisterItem item, ref RegisterItem? emptySlots, bool withoutEmptySlotsRegister, bool removeFromParent)
-        {
-            // validation
-            if (ctx.readOnly) return false;
-            if (item.Id == 0) return false; // cannot delete root node
-            if (rootAncestor.treeHeadId == 0) return false; // error there is no child in this parent, abort with error
-            if (item.treeRootId != rootAncestor.Id) return false; // error this item is not in this parent
-            if (item.specialNodeType == SpecialNodeType.SystemNode) return false; // error cannot purge system node
-
-            // load node
-            String rtf = "";
-            byte[]? xamlbytesOut = null;
-            if (!item.loadNode(ctx, ref rtf, ref xamlbytesOut, false)) return false; // abort all op if error loading the node
-
-            // node loaded successfully, proceed
-            // now delete the node files
-            if (!entryMethods.DBPurgeNodeOFSDB(ctx, item.node)) return false; // critical error then return error before taking any other action
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-
-            // remove the item from lineage tree of the root ancestor
-            if (!Remove(item)) return false; // error item not removed from parent
-
-            // reload latest states
-            item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.Id, false, false, false, false, false, false);
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-
-            if (removeFromParent)
+            if (next != null)
             {
-                // load latest parent state
-                RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-                if (parent == null) return false; // critical error abort all op
-
-                // parent loaded successfully, proceed
-                // remove the item from parent
-                parent.children.Remove(item);
-            }
-            
-            // delete node and register in empty slots system node register or simply complete delete()
-            RegisterItem? newEmptySlotItem = null;
-            if (withoutEmptySlotsRegister)
-            {
-                if (!Register.DeleteNode(ctx, registerFile, item))
-                    return false; // if error abort with error
-            }
-            else
-            {
-                // zero out the deleted node and insert in empty slots register
-                if (!Register.WriteEmptySlot(ctx, registerFile, ref emptySlots, item.Id, ref newEmptySlotItem))
-                    return false; // error abort
-            }
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            return true;
-        }
-        // traverses the tree beginning from root child node and finds an ancestor's all true descendants recursively and marks them
-        public bool MarkDescendants(RegisterItem? ancestor, bool markAncestor, NodeType nodeType, bool useNodeType, SpecialNodeType specialNodeType, 
-            bool useSpecialNodeType, DomainType domainType, bool useDomainType)
-        {
-            if (ctx.readOnly) return false;
-            RegisterItem? original = current;
-
-            current = null;
-            while (true)
-            {
-                RegisterItem? nextItem = Next();
-                if (nextItem == null) break; // end of chain, abort loop
-                if (nextItem.specialNodeType == SpecialNodeType.SystemNode) continue;
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
+                // next is there so configure it
+                if (prev != null)
                 {
-                    if (useNodeType)
-                        nextItem.nodeType = nodeType;
-
-                    if (useSpecialNodeType)
-                        nextItem.specialNodeType = specialNodeType;
-
-                    if (useDomainType)
-                        nextItem.domainType = domainType;
-
-                    // finally update the item
-                    Register.UpdateNode(ctx, registerFile, nextItem, 0, false, 0, false, 0, false);
-                }
-            }
-
-            // reload latest states
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-            if (markAncestor)
-            {
-                if (useNodeType)
-                    ancestor.nodeType = nodeType;
-
-                if (useSpecialNodeType)
-                    ancestor.specialNodeType = specialNodeType;
-
-                if (useDomainType)
-                    ancestor.domainType = domainType;
-
-                // finally update the item
-                Register.UpdateNode(ctx, registerFile, ancestor, 0, false, 0, false, 0, false);
-            }
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-
-            current = original;
-            return true;
-
-        }
-        // traverses the tree beginning from root child node and finds an ancestor's all true descendants recursively and records them in a temp file list
-        public Stream? CreateDescendantList(RegisterItem? ancestor, out String? tmpfileOut)
-        {
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-
-            RegisterItem? original = current;
-
-            Stream? s = CoreFramework.createTempWorkFile(out tmpfileOut);
-            if (s == null) return null;
-            BinaryWriter bw = new BinaryWriter(s);
-
-            current = null;
-            while (true)
-            {
-                RegisterItem? nextItem = Next();
-                if (nextItem == null) break; // end of chain, abort loop
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
-                    bw.Write(nextItem.Id);
-            }
-            current = original;
-            s.Position = 0;
-            return s;
-        }
-
-        // traverses the tree beginning from root child node and finds and counts an ancestor's all true descendants recursively
-        public Int64 CountDescendants(RegisterItem? ancestor)
-        {
-            RegisterItem? original = current;
-
-            current = null;
-            Int64 found = 0;
-            while (true)
-            {
-                RegisterItem? nextItem = Next();
-                if (nextItem == null) break; // end of chain, abort loop
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
-                    found++;
-            }
-
-            current = original;
-            return found;
-        }
-
-        // traverses the tree beginning from root child node and finds an ancestor's all true descendants recursively and deletes them one by one
-        public bool DeleteDescendants(RegisterItem? ancestor, bool deleteAncestor, ref RegisterItem? emptySlots, bool withoutEmptySlotsRegister)
-        {
-            if (ctx.readOnly) return false;
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-
-            // using temporary file register for consistent operation so that integrity remains correct.
-            String? tmpfile = "";
-            Stream? s = CreateDescendantList(ancestor, out tmpfile);
-            if (s == null) return false;
-            BinaryReader br = new BinaryReader(s);
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-
-            while (br.PeekChar() != -1)
-            {
-                emptySlots = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, emptySlots.Id, false, false, false, false, true, true);
-                rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-                Int64 descendantID = br.ReadInt64();
-                RegisterItem? nextItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, descendantID, false, false, false, false, true, true);
-                if (nextItem.specialNodeType == SpecialNodeType.SystemNode) continue;
-                if (!DeleteDescendant(nextItem, ref emptySlots, withoutEmptySlotsRegister, true))
-                    return false; // critical error
-
-            }
-            // close and delete temp file after processing
-            s.Close();
-            CoreFramework.removeTempWorkFile(tmpfile);
-
-            // reload latest states
-            rootAncestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, rootAncestor.Id, false, false, false, false, true, true);
-            ancestor = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, ancestor.Id, false, false, false, false, true, true);
-            emptySlots = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, emptySlots.Id, false, false, false, false, true, true);
-
-            // we cannot delete ancestor at first we need to delete all it's true descendants recursively.
-            // if ancestor is itself a root child Adam, then we cannot delete ancestor at first because it destroys the lineage chain's 
-            // configuration if we delete the root ancesotr node before deleting it's descendants. so we need to first delete all descendants, then in the last 
-            // the ancestor.
-            if (deleteAncestor)
-            {
-                if (ancestor.Id == rootAncestor.Id)
-                {
-                    // ancestor is root ancestor itself, so we delete it with special function
-                    return DeleteRootAncestor(ref emptySlots, withoutEmptySlotsRegister);
+                    // prev is there so configure previous and next
+                    next.prevId = prev.Id;
                 }
                 else
                 {
-                    // ancestor is not root ancestor but a child in it's tree so we delete it with common function
-                    if (!DeleteDescendant(ancestor, ref emptySlots, withoutEmptySlotsRegister, true))
-                        return false; // critical error
+                    // no prev so set next's previous to 0
+                    next.prevId = 0;
                 }
             }
+            Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
+            // reload parent
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
             return true;
         }
-        // traverses the tree beginning from root child node and finds an ancestor's all descendants recursively
-        public bool GetDescendants(RegisterItem? ancestor, ref List<RegisterItem> listOut)
+        // delete the item and it's tree from parent's tree sequence
+        public bool Delete(RegisterItem? item, RegisterItem? emptySlots)
+        {
+            if (ctx.readOnly) return false;
+            if (parent == null) return false;
+            if (item.Id == 0) return false; // root cannot be removed so return error
+            if (item.nodeType == NodeType.EmptySlot) return false;
+
+            // 1: fetch latest states
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+            Register.FindNode(ctx, registerFile, item.Id, ref item);
+
+            // 2. find if parent has tree. if parent is empty abort with error
+            if (parent.childrenCount == 0) return false;
+
+            // 3. delete iterating from last to first in tree sequence
+            RegisterItem? original = current;
+
+            // there are descendants, iterate through them and find valid nodes
+            current = null;
+            while (true)
+            {
+                RegisterItem? prev = Previous();
+                if (prev == null) break;
+
+                if (prev.nodeType == NodeType.EmptySlot) continue;
+                if (prev.specialNodeType == SpecialNodeType.SystemNode) continue;
+
+                // load item's parent
+                RegisterItem? parentInLine = Register.LoadSetupRegisterItem(ctx, registerFile, prev.parentId, false, false, false, false, true, true);
+
+                // delete item from parent proper
+                parentInLine.children.Delete(prev, ref emptySlots, false, false);
+            }
+            current = original;
+            return true;
+        }
+
+        // get first item which is next to parent and is head in tree sequence of parent
+        public RegisterItem? First()
+        {
+            // get first head child in parent which should be first head in tree sequence of parent
+            // note that if there is a single child then both head and tail and current are same item.
+            if (parent.headId == 0) return null;
+            Register.FindNode(ctx, registerFile, parent.headId, ref first);
+            RegisterItem? tail = GetAbsoluteLastTreeSequenceTail();
+            last = tail;
+            current = first;
+            return current;
+        }
+        // get absolute last tail in tree sequence of parent
+        public RegisterItem? Last()
+        {
+            // get absolute last tail in parent
+            // note that if there is a single child then both head and tail and current are same item.
+            if (parent.headId == 0) return null;
+            Register.FindNode(ctx, registerFile, parent.headId, ref first);
+            RegisterItem? tail = GetAbsoluteLastTreeSequenceTail();
+            last = tail;
+            current = tail;
+            return current;
+        }
+
+        // we get all decendants in tree sequence of parent
+        public bool GetDescendantTreeSequence(ref List<RegisterItem> listOut)
         {
             RegisterItem? original = current;
 
@@ -3451,299 +2582,74 @@ namespace TheBook.Net.Core
             {
                 RegisterItem? nextItem = Next();
                 if (nextItem == null) break;
-
-                if (IsDescendantOfAncestor(nextItem, ancestor))
-                    list.Add(nextItem); // yes this is a descendant and exists under ancestor
-
+                
+                list.Add(nextItem); // yes this is a descendant and exists under ancestor
             }
             current = original;
             return true;
         }
-        // we get all lineage tree which exists on root ancestor Adam
-        public bool GetWholeTree(ref List<RegisterItem>? listOut, bool loadNode)
+        public RegisterItem? Next()
         {
-            Int64 nextDescendantId = -1;
-
-            RegisterItem? current = null;
-
-            List<RegisterItem>? list = new List<RegisterItem>();
-            listOut = list;
-
-            if (rootAncestor.treeHeadId == 0) return false; // there are no children so abort and return empty list
-
-            // current is not loaded, so get first head node as current
-            if (Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current) < 0)
-                return false; // end of chain or error or no children present in parent, abort
-
-            if (current == null)
-                return false; // there is no child node present so abort
-
-            nextDescendantId = current.Id;
-
-            while (true)
-            {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-                if (nextOffset < 0) break; // error or end of stream or end of register so break
-                if (nextItem == null) break; // no more items so break
-
-                String rtf = "";
-                byte[]? xamlbytesOut = null;
-                if (loadNode)
-                    nextItem.loadNode(ctx, ref rtf, ref xamlbytesOut, false);
-
-                // add item to list
-                list.Add(nextItem);
-
-                // configure
-                nextDescendantId = nextItem.nextDescendantId;
-
-                // check if end of register reached
-                if (nextItem.nextDescendantId == 0) break;
-            }
-            // output
-            listOut = list;
-            return true;
-        }
-        // we find a descendant in the tree by physically traversing the tree
-        public RegisterItem? FindDescendant(Int64 id, bool loadNode)
-        {
-            Int64 nextDescendantId = -1;
-
-            RegisterItem? current = null;
-
-            if (rootAncestor.treeHeadId == 0) return null; // there are no children so abort and return empty list
-
-            // current is not loaded, so get first head node as current
-            if (Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current) < 0)
-                return null; // end of chain or error or no children present in parent, abort
-
-            if (current == null)
-                return null; // end of chain or error or no children present in parent, abort
-
-            nextDescendantId = current.Id;
-
-            while (true)
-            {
-                // load item from registry
-                RegisterItem? nextItem = null;
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-                if (nextOffset < 0) break; // error or end of stream or end of register so break
-                if (nextItem == null) break; // no more items so break
-
-                if (nextItem.Id == id)
-                {
-                    // node found in descendant tree
-                    String rtf = "";
-                    byte[]? xamlbytesOut = null;
-                    if (loadNode)
-                    {
-                        if (!nextItem.loadNode(ctx, ref rtf, ref xamlbytesOut, false))
-                            return null; // critical error node entry files not found so abort with error
-                    }
-                    // success
-                    return nextItem;
-                }
-
-                // configure
-                nextDescendantId = nextItem.nextDescendantId;
-
-                // check if end of register reached
-                if (nextItem.nextDescendantId == 0)
-                    break;
-            }
-            // not found
-            return null;
-        }
-
-        public RegisterItem? First(RegisterItem? ancestor = null)
-        {
-            if (rootAncestor.treeHeadId == 0) return null;
-            current = null;
-            current = Next(ancestor);
-            //Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current);
-            return current;
-        }
-        public RegisterItem? Last(RegisterItem? ancestor = null)
-        {
-            if (rootAncestor.treeTailId == 0) return null;
-            current = null;
-            current = Previous(ancestor);
-            //Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref current);
-            return current;
-        }
-        public RegisterItem? Next(RegisterItem? ancestor = null)
-        {
-            Int64 nextDescendantId = -1;
-
-            if (rootAncestor.treeHeadId == 0) return null; // there are no children so abort and return empty list
-
             if (current == null)
             {
                 // current is not loaded, so get first head node as current
-                if (Register.FindNode(ctx, registerFile, rootAncestor.treeHeadId, ref current) < 0)
-                    return null; // end of chain or error or no children present in parent, abort
-
-                nextDescendantId = current.Id;
-            }
-            else
-            {
-                // current is already loaded so proceed with the next descendant in chain sequence
-                if (current.nextDescendantId == 0) return null; // end of chain, abort
-
-                // get next descendant's offset
-                nextDescendantId = current.nextDescendantId;
+                return First();
             }
 
-            RegisterItem? nextItem = null;
-            while (true)
-            {
-                // load item from registry
-                Int64 nextOffset = Register.FindNode(ctx, registerFile, nextDescendantId, ref nextItem);
-                if (nextOffset < 0) break; // no more nodes so break
-                if (ancestor != null)
-                {
-                    // an ancestor is passed check if this node is descendant
-                    // return ancestor's descendant
-                    if (IsDescendantOfAncestor(nextItem, ancestor))
-                    {
-                        // descendant of this ancestor found, so set and return it
-                        current = nextItem;
-                        return current;
-                    }
-                }
-                else
-                {
-                    // ancestor param is not passed so set and return this item
-                    // a next descendant is found so break and return it
-                    current = nextItem;
-                    return current;
-                }
+            // get and set next of current
+            if (current.nextId == 0) return null; // eof return null
+            if (current.Id == last.nextId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
 
-                // configure
-                nextDescendantId = nextItem.nextDescendantId;
-
-                // check if end of register reached
-                if (nextItem.nextDescendantId == 0) break;
-            }
-            return null;
+            // get next 
+            RegisterItem? item = null;
+            // load item from registry
+            Int64 offset = Register.FindNode(ctx, registerFile, current.nextId, ref item);
+            if (offset < 0) return null; // no more nodes or error so break
+            if (item.Id == last.nextId) return null; // eof return null, because next found item is outside top ancestor's tree scope.
+            // next found item is inside top ancestor's tree scope so assign it.
+            current = item;
+            return current;
         }
-        public RegisterItem? Previous(RegisterItem? ancestor = null)
+
+        public RegisterItem? Previous()
         {
-            Int64 prevDescendantId = -1;
-
-            if (rootAncestor.treeHeadId == 0) return null; // there are no children so abort and return empty list
-
             if (current == null)
             {
-                // current is not loaded, so get last tail node as current
-                if (Register.FindNode(ctx, registerFile, rootAncestor.treeTailId, ref current) < 0)
-                    return null; // end of chain or error or no children present in parent, abort
-
-                prevDescendantId = current.Id;
-            }
-            else
-            {
-                // current is already loaded so proceed with it's previous descendant in chain sequence
-                if (current.previousDescendantId == 0) return null; // end of chain, abort
-
-                // get prev offset
-                prevDescendantId = current.previousDescendantId;
+                // current is not loaded, so get last tail as current
+                return Last();
             }
 
-            RegisterItem? prevItem = null;
-            while (true)
-            {
-                // load item from registry
-                Int64 prevOffset = Register.FindNode(ctx, registerFile, prevDescendantId, ref prevItem);
-                if (prevOffset < 0) return null; // critical error abort with null
-                if (ancestor != null)
-                {
-                    // an ancestor is passed check if this node is descendant
-                    // return ancestor's descendant
-                    if (IsDescendantOfAncestor(prevItem, ancestor))
-                    {
-                        // descendant of this ancestor found, so set and return it
-                        current = prevItem;
-                        return current;
-                    }
-                }
-                else
-                {
-                    // ancestor param is not passed so set and return this item
-                    // a previous descendant is found so break and return it
-                    current = prevItem;
-                    return current;
-                }
+            // get and set previous of current
+            if (current.prevId == 0) return null; // eof return null
+            if (current.Id == first.prevId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
 
-                // configure
-                prevDescendantId = prevItem.previousDescendantId;
-
-                // check if end of register reached
-                if (prevItem.previousDescendantId == 0) break;
-            }
-            return null;
+            // get prev 
+            RegisterItem? item = null;
+            // load item from registry
+            Int64 offset = Register.FindNode(ctx, registerFile, current.prevId, ref item);
+            if (offset < 0) return null; // no more nodes or error so break
+            // this previous node in tree sequence is descendant, so set and return it
+            if (item.Id == first.prevId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
+            // prev found item is inside top ancestor's tree scope so assign it.
+            current = item;
+            return current;
         }
-
-
-        public bool reloadConfig()
+        public void Reset()
         {
-            if (Register.FindNode(ctx, registerFile, rootAncestor.Id, ref rootAncestor) < 0) return false; // critical error
-            if (rootAncestor == null) return false; // critical error
-            return true;
-        }
-        public void SetLatestState(OpenFSDBContext? ctx, String registerFile, RegisterItem state, bool reset)
-        {
-            // configure and setup
-            this.ctx = ctx;
-            this.registerFile = registerFile;
-            if (reset) this.current = null;
-            this.rootAncestor = state;
-        }
-        public void SetLatestState(RegisterItem state, bool reset)
-        {
-            // configure and setup
-            if (reset) this.current = null;
-            this.rootAncestor = state;
+            current = first = last = null;
         }
 
         public static bool Initialize(OpenFSDBContext? ctx, String registerFile,
-            LineageRegister list, RegisterItem item)
+            TreeSequenceRegister? list, RegisterItem? parentItem)
         {
             // configure and setup
 
             list.ctx = ctx;
             list.registerFile = registerFile;
-            list.current = null;
+            list.current = list.first = list.last = null;
 
-            // initialize register
-            RegisterItem? rootAncestor = null;
-            if (item.treeRootId <= 0)
-            {
-                // item is root child node Adam so set it up as root ancestor and initialize lineage in it
-                rootAncestor = item;
-            }
-            else
-            {
-                // item is an ordinary child in lineage and has another root child ancestor, so load the ancestor and setup
-                //if (Register.FindNode(ctx, registerFile, item.treeRootId, ref rootAncestor) < 0) return false; // critical error
-                rootAncestor = Register.LoadSetupRegisterItem(ctx, registerFile, item.treeRootId, false, false, false, false, true, true);
-                if (rootAncestor == null) return false; // critical error
-            }
-
-            list.rootAncestor = rootAncestor;
-            return true;
-        }
-
-        public static bool InitializeCustomLineageTree(OpenFSDBContext? ctx, String registerFile,
-            LineageRegister list, RegisterItem custom)
-        {
-            // configure and setup
-            list.ctx = ctx;
-            list.registerFile = registerFile;
-            list.current = null;
-            list.rootAncestor = custom;
+            // directly setup count from parent item
+            list.parent = parentItem;
             return true;
         }
 
