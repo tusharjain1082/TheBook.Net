@@ -599,6 +599,19 @@ namespace DiaryJournal.Net
         {
             return selectNode(ctx, sectionId, id, ref rtf, ref xamlbytes, loadData);
         }
+        // changes node's parent physically in entry files
+        public static bool changeNodeParent(OpenFSDBContext ctx, Int64 sectionId, Int64 id, Int64 newParentId)
+        {
+            if (newParentId < 0) return false;
+            String? rtf = "";
+            byte[]? xaml = null;
+            myNode? node = findLoadNode(ctx, sectionId, id, ref rtf, ref xaml, false);
+            if (node == null) return false;
+            if (node.chapter == null) return false;
+            node.chapter.parentId = newParentId;
+            return updateNode(ctx, node, "", null, false, false, false, EntryType.Default);
+        }
+
         // this explores the entry file of a node
         public static void exploreNodeEntryFile(OpenFSDBContext? ctx, Int64 sectionId, Int64 id)
         {
@@ -891,17 +904,14 @@ namespace DiaryJournal.Net
         }
 
         // erases and purges the node's files
-        public static bool purgeNode(OpenFSDBContext? ctx, myNode node, bool purgeConfig = true, bool purgeData = true)
+        public static bool purgeNode(OpenFSDBContext? ctx, Int64 id, Int64 sectionId, bool purgeConfig = true, bool purgeData = true)
         {
             if (ctx.readOnly) return false;
-
-            if (node == null)
-                return false;
 
             // get formatted open file system db node file names
             String entryNameOut = "", entryCfgNameOut = "";
             String entryFile = "", entryConfigFile = "";
-            generateNodeFileNames(ctx, node.DirectorySectionID, node, out entryNameOut, out entryCfgNameOut, out entryFile, out entryConfigFile);
+            generateNodeFileNames(ctx, sectionId, id, out entryNameOut, out entryCfgNameOut, out entryFile, out entryConfigFile);
 
             // local windows file system
             // purge
@@ -915,7 +925,7 @@ namespace DiaryJournal.Net
             if (purgeData && purgeConfig)
             {
                 // first find and load the section of this purged node
-                OpenFSDBSection? section = OpenFSDBSections.findSection(ctx, node.DirectorySectionID);
+                OpenFSDBSection? section = OpenFSDBSections.findSection(ctx, sectionId);
                 if (section != null)
                 {
                     if (section.totalNodes > 0)

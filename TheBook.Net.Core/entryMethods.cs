@@ -1,4 +1,5 @@
 ﻿using RtfPipe.Model;
+using RtfPipe.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -387,6 +388,9 @@ namespace DiaryJournal.Net
             if (node == null)
                 return false; // error node not found
 
+            if (node.chapter.Id == 0) // cannot move root
+                return false;
+
             // validate
             if (node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return false;
@@ -394,14 +398,16 @@ namespace DiaryJournal.Net
             if (node.chapter.parentId == 0) // this item is already located in root so we cannot proceed further
                 return false;
 
-            // get parent register item
-            RegisterItem? parent = null;
-            if (Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.parentId, ref parent) < 0) return false; // critical error
+            // get current register item latest state
+            RegisterItem? currentItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, true, false, false, false, false, false);
+            if (currentItem == null) return false;
+            RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, currentItem.parentId, true, false, false, false, true, true);
             if (parent == null) return false;
+            RegisterItem? dst = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, parent.parentId, true, false, false, false, true, true);
+            if (dst == null) return false;
 
-            // move
-            return DBMoveNodeOFSDB(ctx, node.chapter.Id, parent.parentId);
-
+            // move from parent to another location
+            return parent.children.Move(currentItem, dst);
         }
         // this explores the node's entry file
         public static void DBExploreEntryFileOFSDB(OpenFSDBContext? ctx, Int64 sectionId, Int64 id)
@@ -410,40 +416,10 @@ namespace DiaryJournal.Net
         }
 
         // this promotes the node to one level up in tree structure.
-        public static bool DBMoveNodeOFSDB(OpenFSDBContext ctx, Int64 id, Int64 destId)
+        public static bool DBChangeNodeParentOFSDB(OpenFSDBContext ctx, Int64 sectionId, Int64 id, Int64 newParentId)
         {
-            // get item
-            RegisterItem? item = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, id, true, false, false, false, false, false);
-            if (item == null) return false;
-            RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-            if (parent == null) return false;
-
-            if (item.node == null)
-                return false; // error node not found
-
-            // validate
-            if (item.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
-                return false;
-
-            // validate
-            if (item.node.chapter.parentId == destId) // this item is already located in target so we cannot proceed further
-                return false;
-
-            // validate
-            if (item.node.chapter.domainType == DomainType.EmptySlot)
-                return false; // cannot move free empty slots
-
-            // get parent register item
-            RegisterItem? dest = null;
-            if (Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, destId, ref dest) < 0) return false; // critical error
-            if (dest == null) return false;
-
-            // validations
-            if (dest.childrenCount >= Register.default_maxChildrenNodes)
-                return false;
-
-            // move
-            return parent.children.Move(item, dest);
+            // change parent of node
+            return OpenFileSystemDB.changeNodeParent(ctx, sectionId, id, newParentId);
         }
 
         // this method sets or unsets a parent for a target node by guid
@@ -747,118 +723,11 @@ namespace DiaryJournal.Net
         }
 
         // erases and purges the node's files
-        public static bool DBPurgeNodeOFSDB(OpenFSDBContext ctx, myNode node, bool purgeConfig = true, bool purgeData = true)
+        public static bool DBPurgeNodeOFSDB(OpenFSDBContext ctx, Int64 id, Int64 sectionId, bool purgeConfig = true, bool purgeData = true)
         {
-            return OpenFileSystemDB.purgeNode(ctx, node, purgeConfig, purgeData);
+            return OpenFileSystemDB.purgeNode(ctx, id, sectionId, purgeConfig, purgeData);
         }
 
-        // deletes or restores the node and restores all the affected parent nodes if the child node is restored
-        public static bool DBDeleteOrPurgeNode(OpenFSDBContext? ctx, ref List<myNode> allNodes, myNode node, bool mark = true, bool purge = false,
-            bool checkpoint = true)
-            
-        {
-            // first get the node
-            if (node == null)
-                return false; // no more parents found, this is end of loop
-
-            if (node.chapter.specialNodeType == SpecialNodeType.SystemNode)
-            {
-                // system nodes cannot be deleted/purged
-                allNodes.Remove(node);
-                return false;
-            }
-
-            // purge the marked node if demanded
-            if (purge)
-            {
-                allNodes.Remove(node);
-                return DBPurgeNodeOFSDB(ctx, node, false);
-            }
-
-            if (!mark)
-            {
-                // user demands to restore this node, so all it's parents which were marked deleted,
-                // must also be restored so that this node is restored to completion.
-                List<myNode> effectedNodes = findBottomToRootNodesRecursive(allNodes, ref node, true, true, true);
-
-                // restore all effected nodes
-                foreach (myNode listedNode in effectedNodes)
-                {
-                    myNode effectedNode = listedNode;
-                    effectedNode.chapter.IsDeleted = false; // restore all the affected nodes from bottom to the top
-                    effectedNode.chapter.deletionDateTime = default(DateTime);
-                    DBUpdateNodeOFSDB(ctx, effectedNode, "", null, false, false, false);
-                    allNodes.Remove(listedNode); // parent node processed, remove them
-                }
-            }
-            else
-            {
-                // mark delete
-                node.chapter.IsDeleted = true;
-                node.chapter.deletionDateTime = DateTime.Now;
-
-                // finally update the node
-                DBUpdateNodeOFSDB(ctx, node, "", null, false, false, false);
-            }
-
-            // this node was processed, so remove it from list
-            allNodes.Remove(node);
-
-            return true;
-
-        }
-
-        public static bool DBDeleteOrPurgeListRecursive(OpenFSDBContext? ctx, ref List<myNode> allNodes,
-            ref List<myNode> nodes, bool mark = true, bool purge = false, bool checkpoint = true)
-        {
-            foreach (myNode listedNode in nodes)
-            {
-                myNode node = listedNode;
-
-                // if it is delete/purge then recursion list is used, otherwise there is no recursion list.
-                // in restore we process every list node and only restore it and only it's effected ancestors right to top.
-                if ((mark || purge) || (mark && purge))
-                {
-                    // process all children of this node through a recursion list
-                    List<myNode> children = FindAllChildrenRecursiveInList(ref allNodes, ref node, true, false);
-                    foreach (myNode listedChild in children)
-                    {
-                        myNode child = listedChild;
-                        DBDeleteOrPurgeNode(ctx, ref allNodes, child, mark, purge, checkpoint);
-                    }
-                }
-
-                // finally process this node
-                DBDeleteOrPurgeNode(ctx, ref allNodes, node, mark, purge, checkpoint);
-            }
-
-            return true;
-        }
-
-        public static bool DBDeleteOrPurgeNodeRecursive(OpenFSDBContext? ctx, ref List<myNode> allNodes, myNode node, bool mark = true, bool purge = false,
-            bool checkpoint = true)
-        {
-            if (node == null)
-                return false;
-
-            // if it is delete/purge then recursion list is used, otherwise there is no recursion list.
-            // in restore we process every list node and only restore it and only it's effected ancestors right to top.
-            if ((mark || purge) || (mark && purge))
-            {
-                // process all children of this node through a recursion list
-                List<myNode> children = FindAllChildrenRecursiveInList(ref allNodes, ref node, true, false);
-                foreach (myNode listedChild in children)
-                {
-                    myNode child = listedChild;
-                    DBDeleteOrPurgeNode(ctx, ref allNodes, child, mark, purge, checkpoint);
-                }
-            }
-
-            // finally process this node
-            DBDeleteOrPurgeNode(ctx, ref allNodes, node, mark, purge, checkpoint);
-
-            return true;
-        }
         // everything is kept in sets. set node is the root node. all import and export of sets exist in set node which is their root node.
         // set node is root node and has no parent.
         public static myNode createSetNode(ref Int64 currentIndex, String setName, DateTime setDateTime)
@@ -2309,7 +2178,7 @@ namespace DiaryJournal.Net
             else
                 rtf = xamlEntry.toRtf(xamlbytes);
 
-            entryMethods.DBPurgeNodeOFSDB(ctx, root.node, false, true);
+            entryMethods.DBPurgeNodeOFSDB(ctx, root.node.chapter.Id, root.node.DirectorySectionID, false, true);
             entryMethods.DBUpdateNodeOFSDB(ctx, root.node, rtf, xamlbytes, true, false, false, ((fromRtfToXaml) ? EntryType.Xaml : EntryType.Rtf));
 
             index++;
@@ -2336,7 +2205,7 @@ namespace DiaryJournal.Net
 				else
 					rtf = xamlEntry.toRtf(xamlbytes);
 
-				entryMethods.DBPurgeNodeOFSDB(ctx, nextItem.node, false, true);
+				entryMethods.DBPurgeNodeOFSDB(ctx, nextItem.node.chapter.Id, nextItem.node.DirectorySectionID, false, true);
 				entryMethods.DBUpdateNodeOFSDB(ctx, nextItem.node, rtf, xamlbytes, true, false, false, ((fromRtfToXaml) ? EntryType.Xaml : EntryType.Rtf));
 
                 index++;

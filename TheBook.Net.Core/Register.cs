@@ -1389,26 +1389,40 @@ namespace TheBook.Net.Core
             RegisterItem? item = Register.LoadSetupRegisterItem(ctx, file, id, false, false, false, false, true, true);
             RegisterItem? next = Register.LoadSetupRegisterItem(ctx, file, nextId, false, false, false, false, true, true);
 
+            // check if next is root, if root then do not update root but only item or tail's next to 0
+
             // 2: get this item's absolute and last tail
             RegisterItem? tail = item.tree.GetAbsoluteLastTreeSequenceTail();
+            if (tail == null) tail = item; // if there is no tree use item directly
+
+            if (nextId == 0)
+            {
+                // next is 0 means dead end so there is nothing next
+                // next is 0 or root so do not update root's prev
+                tail.nextId = 0;
+                Register.UpdateNode(ctx, file, tail, 0, false, 0, false, 0, false);
+                return true;
+            }
 
             // 3: if tail is null means no tree in item so join to item itself. if tail then join to tail. backup original next id and configure item and tail and the next node
-            if (tail != null)
-            {
-                // means there is absolute last tail in item, so configure it and the next
-                tail.nextId = next.Id;
-                next.prevId = tail.Id;
-                Register.UpdateNode(ctx, file, tail, 0, false, 0, false, 0, false);
-                Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
-            }
-            else
-            {
-                // means there is no tree in item so configure item itself and the next
-                item.nextId = next.Id;
-                next.prevId = item.Id;
-                Register.UpdateNode(ctx, file, item, 0, false, 0, false, 0, false);
-                Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
-            }
+            //if (tail != null)
+            //{
+
+            // means there is absolute last tail in item, so configure it and the next
+            // means next isn't 0 or root but a real node so update it
+            tail.nextId = next.Id;
+            next.prevId = tail.Id;
+            Register.UpdateNode(ctx, file, tail, 0, false, 0, false, 0, false);
+            Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
+            //}
+            //else
+            //{
+            // means there is no tree in item so configure item itself and the next
+            //item.nextId = next.Id;
+            //next.prevId = item.Id;
+            //Register.UpdateNode(ctx, file, item, 0, false, 0, false, 0, false);
+            //Register.UpdateNode(ctx, file, next, 0, false, 0, false, 0, false);
+            //}
             return true;
         }
         // this method joins item's prev to another item and returns original prev's id
@@ -1419,6 +1433,18 @@ namespace TheBook.Net.Core
             RegisterItem? prev = Register.LoadSetupRegisterItem(ctx, file, prevId, false, false, false, false, true, true);
 
             // means there is no tree in item so configure item itself and the next
+            if (item.Id == 0)
+            {
+                // means item is root, we cannot set root's previous because it creates integral corruption.
+                // means dead end we cannot change root's previous
+                if (prev.Id == 0) return false; // both cannot be dead end or root so return error
+
+                prev.nextId = 0;
+                Register.UpdateNode(ctx, file, prev, 0, false, 0, false, 0, false);
+                return true;
+            }
+
+            // means item is not root but real ordinary node so we change both.
             item.prevId = prev.Id;
             prev.nextId = item.Id;
             Register.UpdateNode(ctx, file, item, 0, false, 0, false, 0, false);
@@ -1463,6 +1489,9 @@ namespace TheBook.Net.Core
             // phase 1: join item's previous and item's last tail's next to each other so that item and it's tree is removed from between.
             // item's prev is considered previous from entire item and it's tree in tree sequence. and last tail's next is considered an alien node outside item's tree scope.
 
+            Int64 id = item.Id;
+            Int64 sectionId = item.sectionId;
+
             // get next
             RegisterItem? tail = item.tree.Last();
             Int64 nextId = item.nextId;
@@ -1476,6 +1505,9 @@ namespace TheBook.Net.Core
             item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
             srcParent = Register.LoadSetupRegisterItem(ctx, file, item.parentId, false, false, false, false, true, true);
             srcParent.children.Remove(item);
+            item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
+            srcParent = Register.LoadSetupRegisterItem(ctx, file, item.parentId, false, false, false, false, true, true);
+            dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
 
             // phase 3: join item to destination's last tail and then destination's last tail's next to item's last tail's next
             // get destination parent's last tail
@@ -1492,7 +1524,8 @@ namespace TheBook.Net.Core
             dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
             dstParent.children.Add(item);
 
-            return true;
+            // final phase 5: move node to destination location physically in db config files
+            return entryMethods.DBChangeNodeParentOFSDB(ctx, sectionId, id, dstParentId);
         }
 
 
@@ -1947,6 +1980,9 @@ namespace TheBook.Net.Core
             // phase 1 - get parent's current configuration and item from register
             if (ctx.readOnly) return false;
 
+            Int64 id = item.Id;
+            Int64 sectionId = item.sectionId;
+
             Register.FindNode(ctx, registerFile, item.Id, ref item);
             parent = Register.LoadSetupRegisterItem(ctx, registerFile, parent.Id, false, false, false, false, true, true);
 
@@ -1982,6 +2018,9 @@ namespace TheBook.Net.Core
                 RegisterItem? root = Register.LoadSetupRegisterItem(ctx, registerFile, 0, false, false, false, false, true, true);
                 root.usedSlots -= 1;
                 Register.UpdateNode(ctx, registerFile, root, 0, false, 0, false, 0, false);
+
+                // final phase 5 - delete node's files
+                return entryMethods.DBPurgeNodeOFSDB(ctx, id, sectionId, true, true);
             }
             return true;
         }

@@ -962,7 +962,7 @@ namespace DiaryJournal.Net
             }
 
             // reload empty slots system node
-            currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
+            //currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
 
             // load registry item's node config from entry file
             String rtf = "";
@@ -2136,7 +2136,7 @@ namespace DiaryJournal.Net
                 if (node == null)
                     return;
 
-                entryMethods.DBDeleteOrPurgeNodeRecursive(dbCtx, ref worklist, node, true, false, false);
+                //todo entryMethods.DBDeleteOrPurgeNodeRecursive(dbCtx, ref worklist, node, true, false, false);
 
                 listViewItem.Checked = false;
                 listViewItem.Selected = true;
@@ -2510,18 +2510,19 @@ namespace DiaryJournal.Net
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
 
-            if (currentPathItem.Id == destId)
-                return;
-
-            // move node 
-            entryMethods.DBMoveNodeOFSDB(dbCtx, currentPathItem.Id, destId);
-
             // get current register item latest state
             RegisterItem? currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
             if (currentItem == null) return;
+            RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.parentId, true, false, false, false, true, true);
+            if (parent == null) return;
+            RegisterItem? dst = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, destId, true, false, false, false, true, true);
+            if (dst == null) return;
+
+            // move from parent to another location
+            parent.children.Move(currentItem, dst);
 
             //setup
-            currentPathItem = currentItem;
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, false, false, false, false);
 
             // update form
             reloadPath("", false, currentPathItem);
@@ -4620,11 +4621,17 @@ namespace DiaryJournal.Net
 
             RegisterItem? root = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
 
-            for (int i = 0; i < root.usedSlots; i++)
+            for (int i = 0; i <= root.usedSlots; i++)
             {
                 RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, i, false, false, false, false, true, true);
+                if (item.domainType == DomainType.EmptySlot)
+                    continue;
 
-                if (item.nextId == 0 || item.prevId == 0)
+                if (item.nextId == 0 && item.prevId == 0)
+                    found.Add($"item:{item.Id}=>next:{item.nextId} and prev:{item.prevId}");
+                else if (item.nextId == 0)
+                    found.Add($"item:{item.Id}=>next:{item.nextId} and prev:{item.prevId}");
+                else if (item.prevId == 0)
                     found.Add($"item:{item.Id}=>next:{item.nextId} and prev:{item.prevId}");
             }
 
