@@ -1,13 +1,15 @@
-﻿using System;
+﻿using DiaryJournal.Net;
+using RtfPipe;
+using RtfPipe.Tokens;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Documents;
-using DiaryJournal.Net;
-using RtfPipe;
-using RtfPipe.Tokens;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace TheBook.Net.Core
@@ -250,6 +252,8 @@ namespace TheBook.Net.Core
             Register.FindRegisterItems(ctx, ctx.dbNodeTreeRegistryFile, 0, NodeType.EmptySlot, true,
                 SpecialNodeType.SystemNode, true, DomainType.AnyOrAll, false, ref registry, true);
 
+            //MessageBox.Show($"empty slot core nodes: {registry.Count} id:{registry.First().Id.ToString()}");
+
             if (registry.Count == 0)
             {
                 // empty slots system node does not exists so first create it.
@@ -461,47 +465,101 @@ namespace TheBook.Net.Core
                 }
             }
 
-            // phase 2 - build both registers children register and lineage tree register
+            // phase 2 - 1st configure root and it's children
 
-            // iterate all valid slots by their valid nodes files which exist in sections of the db
-            // iterate through all sections
             index = 0;
+            List<myNode>? allNodes = new List<myNode>();
             foreach (OpenFSDBSection section in ctx.dbSections.sections)
             {
-                List<myNode> list = new List<myNode>();
+                List<myNode>? list = new List<myNode>();
                 if (!OpenFileSystemDB.findSectionNodes(ctx, section.sectionId, ref list)) continue;
-                List<myNode> sorted = list.OrderBy(x => x.chapter.Id).ToList();
+                allNodes.AddRange(list);
+            }
+            
+            // note: first it is mandatory to establish root and it's children before anything else or integral failure happens.
 
-                // iterate and process all entries in this section
-                foreach (myNode? node in sorted)
+            // first manually process/establish nodes of parent root 0
+            List<myNode>? rootChildren = allNodes.Where(node => node.chapter.parentId == 0 && node.chapter.Id != 0).ToList();
+            rootChildren = rootChildren.OrderBy(x => x.chapter.Id).ToList();
+
+            // iterate and process all root children
+            foreach (myNode? node in rootChildren)
+            {
+                // this is not root but parent and or child node, so load both current item and it's parent and insert the item into their registers.
+                RegisterItem? item = null;
+                Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
+
+                // now add the item into parent's both registers
+
+                // first add to tree sequence of parent
+                RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.parentId, false, false, false, false, true, true);
+                parent.tree.Add(item);
+                Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
+                parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.parentId, false, false, false, false, true, true);
+
+                // 2nd add to children's register
+                if (!parent.children.Add(item)) return false; // critical error abort operations
+
+                // change in root
+                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
+                root.usedSlots += 1;
+                Register.UpdateNode(ctx, ctx.dbNodeTreeRegistryFile, root, 0, false, 0, false, 0, false);
+
+                index += 1;
+            }
+
+            // update                
+            if (formop != null)
+            {
+                formop.updateProgressBar(index, totalValid);
+                formop.updateFilesStatus(index, totalValid);
+            }
+
+            // phase 3 - now configure and establish all the rest of tree into root children
+
+            myNode? rootNode = allNodes.Where(x => x.chapter.Id == 0).FirstOrDefault();
+            if (rootNode == null) return false; // critical error root entry does not exists
+            Queue<myNode?> queue = new Queue<myNode?>();
+            queue.Enqueue(rootNode);
+            while (queue.Count > 0)
+            {
+                myNode? node = queue.Dequeue();
+
+                List<myNode>? children = allNodes.Where(x => x.chapter.parentId == node.chapter.Id && x.chapter.Id != 0).ToList();
+                children = children.OrderBy(x => x.chapter.Id).ToList();
+
+                foreach (myNode? child in children)
+                    queue.Enqueue(child);
+                
+                // now add the item into parent's both registers
+                if (node.chapter.parentId != 0)
                 {
-                    if (node.chapter.Id == 0) continue; // root is skipped
-
-                    // this is not root but parent and or child node, so load both current item and it's parent and insert the item into their registers.
                     RegisterItem? item = null;
                     Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
-                    if (item == null) return false; // critical error abort operations
-                    RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
-                    if (parent == null) return false; // critical error abort operations
-
-                    // now add the item into parent's both registers
 
                     // first add to tree sequence of parent
+                    RegisterItem? parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.parentId, false, false, false, false, true, true);
                     parent.tree.Add(item);
                     Register.FindNode(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.Id, ref item);
-                    parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
+                    parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, node.chapter.parentId, false, false, false, false, true, true);
 
                     // 2nd add to children's register
                     if (!parent.children.Add(item)) return false; // critical error abort operations
+
+                    // change in root
+                    RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
+                    root.usedSlots += 1;
+                    Register.UpdateNode(ctx, ctx.dbNodeTreeRegistryFile, root, 0, false, 0, false, 0, false);
+
+                    // update                
+                    index += 1;
+                    if (formop != null)
+                    {
+                        formop.updateProgressBar(index, totalValid);
+                        formop.updateFilesStatus(index, totalValid);
+                    }
                 }
 
-                // update                
-                index += list.Count;
-                if (formop != null)
-                {
-                    formop.updateProgressBar(index, totalValid);
-                    formop.updateFilesStatus(index, totalValid);
-                }
             }
             return true;
         }

@@ -89,6 +89,11 @@ namespace DiaryJournal.Net
                 {
                     insertIntegerLVItem(item);
                 }
+                else if (listType == ListType.String)
+                {
+                    insertStringLVItem((String)item);
+                }
+
             }
         }
         public void insertIntegerLVItem(Object? value)
@@ -97,6 +102,15 @@ namespace DiaryJournal.Net
             lvitem.Name = value.ToString();
             lvitem.Tag = value;
             lvitem.Text = value.ToString();
+            lvitem.SubItems.Add("");
+            lvList.Items.Add(lvitem);
+        }
+        public void insertStringLVItem(String? value)
+        {
+            System.Windows.Forms.ListViewItem lvitem = new System.Windows.Forms.ListViewItem();
+            lvitem.Name = value;
+            lvitem.Tag = value;
+            lvitem.Text = value;
             lvitem.SubItems.Add("");
             lvList.Items.Add(lvitem);
         }

@@ -473,6 +473,35 @@ namespace TheBook.Net.Core
 
         #region "framework"
 
+        public static Stream? RegisterCopyToMemory(String file)
+        {
+            if (!File.Exists(file)) return null;
+            byte[] bytes = File.ReadAllBytes(file);
+            return new MemoryStream(bytes);
+        }
+
+        // loads direct children of a parent raw without using register
+        public static List<RegisterItem>? LoadChildrenRaw(Stream? s, Int64 id)
+        {
+            // first get the item by id
+            //RegisterItem? parent = LoadSetupRegisterItem(ctx, file, id, false, false, false, false, false, false);
+            //if (parent == null) return false;
+
+            List<RegisterItem>? list = new List<RegisterItem>();
+
+            s.Position = 0;
+
+            for (Int64 i = 0; i < Register.default_totalPreallocatedNodes; i++)
+            {
+                RegisterItem? child = null;
+                FindNode(s, i, ref child);
+                if (child == null) continue;
+                if (child.parentId == id && child.domainType != DomainType.EmptySlot)
+                    list.Add(child);
+            }
+            return list;
+        }
+
         // this method finds a first empty slot
         public static RegisterItem? FindFirstEmptySlot(OpenFSDBContext? ctx, String file, ref RegisterItem? emptySlots, bool deleteEmptySlot)
         {
@@ -2341,7 +2370,7 @@ namespace TheBook.Net.Core
 
             // if this tail is emptySlot system, then deny chaining it.
             if (tail.nodeType == NodeType.EmptySlot && tail.specialNodeType == SpecialNodeType.SystemNode)
-                return tail; // empty slot node, deny it.
+                return tail; // empty slot core node
 
             if (tail.childrenCount == 0)
             {

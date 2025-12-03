@@ -372,6 +372,7 @@
             toolStripSeparator19 = new ToolStripSeparator();
             toolStripMenuItem5 = new ToolStripMenuItem();
             toolStripMenuItem3 = new ToolStripMenuItem();
+            toolStripMenuItem9 = new ToolStripMenuItem();
             toolStripSeparator48 = new ToolStripSeparator();
             newLabelNodeToolStripMenuItem = new ToolStripMenuItem();
             toolStripSeparator9 = new ToolStripSeparator();
@@ -3318,7 +3319,7 @@
             // 
             // entryToolStripMenuItem
             // 
-            entryToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newEntryToolStripMenuItem, newEntryNowToolStripMenuItem, toolStripMenuItem22, toolStripSeparator3, saveEntryToolStripMenuItem, toolStripMenuItem54, toolStripMenuItem4, toolStripSeparator4, entryTitleToolStripMenuItem, toolStripMenuItem37, toolStripSeparator19, toolStripMenuItem5, toolStripMenuItem3, toolStripSeparator48, newLabelNodeToolStripMenuItem, toolStripSeparator9, promoteNodeToolStripMenuItem, moveNodeToRootToolStripMenuItem, toolStripMenuItem11, toolStripSeparator50, checkmarkAllNodesToolStripMenuItem, uncheckAllNodesToolStripMenuItem, toolStripSeparator74, recoverSavedEntryFromDbToolStripMenuItem, toolStripSeparator75, configureEntrysWidthToolStripMenuItem, toolStripSeparator77, convertEntryToRawTextToolStripMenuItem, toolStripSeparator78, cloneEntryToolStripMenuItem, cloneAtParentLevelToolStripMenuItem, toolStripMenuItem75, cloneToOtherLocationToolStripMenuItem, toolStripSeparator26 });
+            entryToolStripMenuItem.DropDownItems.AddRange(new ToolStripItem[] { newEntryToolStripMenuItem, newEntryNowToolStripMenuItem, toolStripMenuItem22, toolStripSeparator3, saveEntryToolStripMenuItem, toolStripMenuItem54, toolStripMenuItem4, toolStripSeparator4, entryTitleToolStripMenuItem, toolStripMenuItem37, toolStripSeparator19, toolStripMenuItem5, toolStripMenuItem3, toolStripMenuItem9, toolStripSeparator48, newLabelNodeToolStripMenuItem, toolStripSeparator9, promoteNodeToolStripMenuItem, moveNodeToRootToolStripMenuItem, toolStripMenuItem11, toolStripSeparator50, checkmarkAllNodesToolStripMenuItem, uncheckAllNodesToolStripMenuItem, toolStripSeparator74, recoverSavedEntryFromDbToolStripMenuItem, toolStripSeparator75, configureEntrysWidthToolStripMenuItem, toolStripSeparator77, convertEntryToRawTextToolStripMenuItem, toolStripSeparator78, cloneEntryToolStripMenuItem, cloneAtParentLevelToolStripMenuItem, toolStripMenuItem75, cloneToOtherLocationToolStripMenuItem, toolStripSeparator26 });
             entryToolStripMenuItem.Name = "entryToolStripMenuItem";
             entryToolStripMenuItem.Size = new Size(46, 23);
             entryToolStripMenuItem.Text = "E&ntry";
@@ -3412,6 +3413,13 @@
             toolStripMenuItem3.Size = new Size(238, 22);
             toolStripMenuItem3.Text = "find and list orphaned nodes";
             toolStripMenuItem3.Click += toolStripMenuItem3_Click;
+            // 
+            // toolStripMenuItem9
+            // 
+            toolStripMenuItem9.Name = "toolStripMenuItem9";
+            toolStripMenuItem9.Size = new Size(238, 22);
+            toolStripMenuItem9.Text = "find broken tree sequence";
+            toolStripMenuItem9.Click += toolStripMenuItem9_Click;
             // 
             // toolStripSeparator48
             // 
@@ -4682,5 +4690,6 @@
         private ToolStripSeparator toolStripSeparator26;
         private ToolStripMenuItem purgeCheckedNodesTreesToolStripMenuItem;
         private ToolStripMenuItem toolStripMenuItem3;
+        private ToolStripMenuItem toolStripMenuItem9;
     }
 }

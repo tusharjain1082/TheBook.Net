@@ -11,6 +11,7 @@ using RtfPipe.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.DirectoryServices.ActiveDirectory;
 using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
@@ -31,6 +32,7 @@ using System.Xml.Linq;
 using TheBook.Net.Core;
 using static DiaryJournal.Net.FindReplaceFramework;
 using static System.Windows.Forms.DataFormats;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace DiaryJournal.Net
 {
@@ -838,7 +840,7 @@ namespace DiaryJournal.Net
             if (dbCtx.readOnly)
                 MessageBox.Show("warning: database is write locked. to write in it, please disable write lock in database manager form.", "warning",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                
+
             // operations status form
             this.Enabled = false;
             FormOperation? formOperation = null;
@@ -983,6 +985,8 @@ namespace DiaryJournal.Net
 
             // configure siblings listview
             reloadChildren(currentItem.parentId, lvSiblings);
+
+            RegisterItem? root = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, 0, true, false, true, false, true, true);
 
             // finally configure everything
             String fsName = "";
@@ -4441,12 +4445,15 @@ namespace DiaryJournal.Net
             currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, false, false, true, false, true, true);
             currentPathItem.tree.GetDescendantTreeSequence(ref currentPathItem.treeList);
 
-            // iterate
+            // add this top parent first
+            found.Add(currentPathItem.Id);
+
+            // iterate and add all tree sequence of this top parent
             foreach (RegisterItem item in currentPathItem.treeList)
                 found.Add(item.Id);
 
             // let the user choose and insert a single template code into the template entry
-            form.Text = $"total descendants of current node: {found.LongCount()}";
+            form.Text = $"total descendants of current node: {found.Count}";
             if (form.ShowDialog(this) != DialogResult.OK) return;
 
             Int64 id = (Int64)form.outSelectedItem;
@@ -4600,6 +4607,33 @@ namespace DiaryJournal.Net
 
             // update form
             reloadPath("", false, currentPathItem);
+
+        }
+
+        private void toolStripMenuItem9_Click(object sender, EventArgs e)
+        {
+            List<Object> found = new List<Object>();
+            FormList form = new FormList();
+            form.checkMultipleItems = false;
+            form.listType = FormList.ListType.String;
+            form.allItems = found;
+
+            RegisterItem? root = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
+
+            for (int i = 0; i < root.usedSlots; i++)
+            {
+                RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, i, false, false, false, false, true, true);
+
+                if (item.nextId == 0 || item.prevId == 0)
+                    found.Add($"item:{item.Id}=>next:{item.nextId} and prev:{item.prevId}");
+            }
+
+            // let the user choose and insert a single template code into the template entry
+            form.Text = $"total nodes where tree sequence was broken or where dead end exists: {found.Count}";
+            if (form.ShowDialog(this) != DialogResult.OK) return;
+
+            Int64 id = (Int64)form.outSelectedItem;
+            __gotoEntryById(id);
 
         }
     }
