@@ -2527,6 +2527,8 @@ namespace TheBook.Net.Core
             Register.FindNode(ctx, registerFile, parent.Id, ref parent);
             Register.FindNode(ctx, registerFile, item.Id, ref item);
 
+            if (item.prevId == item.nextId) return false; // both 0 is error both same is error.
+
             // 2. find if parent has tree. if parent is empty abort with error
             if (parent.childrenCount == 0) return false;
 
@@ -2536,39 +2538,39 @@ namespace TheBook.Net.Core
             Register.FindNode(ctx, registerFile, item.nextId, ref next);
             Register.FindNode(ctx, registerFile, item.prevId, ref prev);
 
+            /* rules and logic
+             * if item's next is root 0 then root 0's prev always remains 0 cannot be changed because there is nothing previous in root 0.
+             * 
+             * 
+             * */
+
             // 4.configure both adjucent nodes and the item.
             item.prevId = item.nextId = 0;
-            if (prev != null)
+            if (prev.Id == 0)
             {
-                // prev is there so configure it
-                if (next != null)
-                {
-                    // next is there so configure previous and next
-                    prev.nextId = next.Id;
-                }
-                else
-                {
-                    // no next so set previous's next to 0
-                    prev.nextId = 0;
-                }
+                // prev is root 0 so it's prev cannot be changed and is set to 0 but it's next is changed on nonzero next
+                prev.prevId = 0;
             }
-            if (next != null)
+            else
             {
-                // next is there so configure it
-                if (prev != null)
-                {
-                    // prev is there so configure previous and next
-                    next.prevId = prev.Id;
-                }
-                else
-                {
-                    // no prev so set next's previous to 0
-                    next.prevId = 0;
-                }
+                // prev is not root 0 but a nonzero node so change it
+                prev.nextId = next.Id;
             }
+            // if next is 0 means not root but a dead end. root 0 is most previous which is first ground node. so root's prev is always set to 0.
+            if (next.Id == 0)
+            {
+                // next is root 0 then it's prev is set to 0 always as a rule.
+                next.prevId = 0;
+            }
+            else
+            {
+                // next is not root 0 so change the next node
+                next.prevId = prev.Id;
+            }
+
+            Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
             Register.UpdateNode(ctx, registerFile, item, 0, false, 0, false, 0, false);
             Register.UpdateNode(ctx, registerFile, prev, 0, false, 0, false, 0, false);
-            Register.UpdateNode(ctx, registerFile, next, 0, false, 0, false, 0, false);
             // reload parent
             Register.FindNode(ctx, registerFile, parent.Id, ref parent);
             return true;
@@ -2580,13 +2582,14 @@ namespace TheBook.Net.Core
             if (parent == null) return false;
             if (item.Id == 0) return false; // root cannot be removed so return error
             if (item.nodeType == NodeType.EmptySlot) return false;
+            if (item.specialNodeType == SpecialNodeType.SystemNode) return false;
 
             // 1: fetch latest states
             Register.FindNode(ctx, registerFile, parent.Id, ref parent);
             Register.FindNode(ctx, registerFile, item.Id, ref item);
 
             // 2. find if parent has tree. if parent is empty abort with error
-            if (parent.childrenCount == 0) return false;
+            //if (parent.childrenCount == 0) return false;
 
             // 3. delete iterating from last to first in tree sequence
             RegisterItem? original = current;
@@ -2597,6 +2600,8 @@ namespace TheBook.Net.Core
             {
                 RegisterItem? prev = Previous();
                 if (prev == null) break;
+                if (prev.Id == 0) break; // dead end eof abort
+                if (prev.Id == item.prevId) break; // eof we reached outside item to item's previous means end of sequence reached so abort.
 
                 if (prev.nodeType == NodeType.EmptySlot) continue;
                 if (prev.specialNodeType == SpecialNodeType.SystemNode) continue;
@@ -2607,6 +2612,14 @@ namespace TheBook.Net.Core
                 // delete item from parent proper
                 parentInLine.children.Delete(prev, ref emptySlots, false, false);
             }
+
+            // finally delete the top item
+            // load item's parent
+            RegisterItem? itemparent = Register.LoadSetupRegisterItem(ctx, registerFile, item.parentId, false, false, false, false, true, true);
+
+            // delete item from parent proper
+            itemparent.children.Delete(item, ref emptySlots, false, false);
+
             current = original;
             return true;
         }

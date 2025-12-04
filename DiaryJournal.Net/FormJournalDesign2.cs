@@ -962,7 +962,7 @@ namespace DiaryJournal.Net
             }
 
             // reload empty slots system node
-            //currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
+            currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
 
             // load registry item's node config from entry file
             String rtf = "";
@@ -4484,6 +4484,10 @@ namespace DiaryJournal.Net
                 return;
             }
 
+            if (currentPathItem.Id == 0) return;
+            if (currentPathItem.specialNodeType == SpecialNodeType.SystemNode) return;
+            if (currentPathItem.nodeType == NodeType.EmptySlot) return;
+
             if (MessageBox.Show("warning: are you sure you want to purge checked nodes? all of their descendants trees will also be forever purged along with them!\n" +
                 "there is no need to purge anything! you can recycle and reuse the nodes! you have 8+ million slots!", "warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 return;
@@ -4497,20 +4501,16 @@ namespace DiaryJournal.Net
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
-            foreach (ListViewItem lvItem in lvCurrentPath.CheckedItems)
-            {
-                if ((lvItem.SubItems[1].Text == @"\") || (lvItem.SubItems[1].Text == @".") || (lvItem.SubItems[1].Text == @"..")) continue;
-                RegisterItem? regitem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, (Int64)lvItem.Tag, false, false, false, false, true, true);
-                this.emptySlotsItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, this.emptySlotsItem.Id, false, false, false, false, true, true);
-                RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, regitem.parentId, false, false, false, false, true, true);
-                parent.tree.Delete(regitem, emptySlotsItem);
-            }
+            RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, (Int64)currentPathItem.Id, false, false, false, false, true, true);
+            this.emptySlotsItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, this.emptySlotsItem.Id, false, false, false, false, true, true);
+            RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, item.parentId, false, false, false, false, true, true);
+            item.tree.Delete(item, emptySlotsItem);
 
             this.Invoke(toggleForm, true);
             formOperation.close();
 
             // reload to correct sync
-            reloadPath("", false, currentPathItem);
+            reloadPath("", false, parent);
         }
 
         private void toolStripMenuItem3_Click(object sender, EventArgs e)
@@ -4619,11 +4619,14 @@ namespace DiaryJournal.Net
             form.listType = FormList.ListType.String;
             form.allItems = found;
 
-            RegisterItem? root = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, 0, false, false, false, false, true, true);
-
-            for (int i = 0; i <= root.usedSlots; i++)
+            Stream? s = Register.RegisterCopyToMemory(dbCtx.dbNodeTreeRegistryFile);
+            Int64 id = 0;
+            while (true)
             {
-                RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, i, false, false, false, false, true, true);
+                RegisterItem? item = null;
+                if (Register.FindNode(s, id++, ref item) < 0) break;
+                if (item == null) break;
+                
                 if (item.domainType == DomainType.EmptySlot)
                     continue;
 
@@ -4635,11 +4638,14 @@ namespace DiaryJournal.Net
                     found.Add($"item:{item.Id}=>next:{item.nextId} and prev:{item.prevId}");
             }
 
+            s.Close();
+            s.Dispose();
+
             // let the user choose and insert a single template code into the template entry
             form.Text = $"total nodes where tree sequence was broken or where dead end exists: {found.Count}";
             if (form.ShowDialog(this) != DialogResult.OK) return;
 
-            Int64 id = (Int64)form.outSelectedItem;
+            id = (Int64)form.outSelectedItem;
             __gotoEntryById(id);
 
         }
