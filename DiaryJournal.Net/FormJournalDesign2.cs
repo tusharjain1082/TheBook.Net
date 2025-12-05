@@ -1191,6 +1191,8 @@ namespace DiaryJournal.Net
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
 
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
+
             // system node title cannot be modified
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
@@ -2466,6 +2468,8 @@ namespace DiaryJournal.Net
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
 
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
+
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
@@ -2506,6 +2510,8 @@ namespace DiaryJournal.Net
             if (currentPathItem.Id <= 0) return;
             if (currentPathItem.Id == destId) return;
 
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
+
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
@@ -2534,6 +2540,8 @@ namespace DiaryJournal.Net
 
             if (currentPathItem == null) return;
             if (currentPathItem.Id <= 0) return;
+
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
 
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
@@ -2794,6 +2802,8 @@ namespace DiaryJournal.Net
 
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
+
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
 
             DateTime inputDate = currentPathItem.node.chapter.chapterDateTime;
             if (userInterface.ShowDateTimeDialog("edit entry's date and time", ref inputDate, null) != DialogResult.OK)
@@ -3557,6 +3567,8 @@ namespace DiaryJournal.Net
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
 
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
+
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
@@ -3607,6 +3619,8 @@ namespace DiaryJournal.Net
             if (currentPathItem.Id == 0) return;
             if (currentPathItem.parentId == 0) return;
 
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
+
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
                 return;
@@ -3627,6 +3641,8 @@ namespace DiaryJournal.Net
 
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
+
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
 
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)
@@ -3650,6 +3666,8 @@ namespace DiaryJournal.Net
 
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
+
+            currentPathItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentPathItem.Id, true, false, false, false, false, false);
 
             // skip if this is system node, we cannot change it
             if (currentPathItem.node.chapter.specialNodeType == SpecialNodeType.SystemNode)

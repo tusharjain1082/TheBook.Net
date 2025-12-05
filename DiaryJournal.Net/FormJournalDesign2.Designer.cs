@@ -1125,7 +1125,6 @@
             // 
             // lvChildren
             // 
-            lvChildren.CheckBoxes = true;
             lvChildren.Columns.AddRange(new ColumnHeader[] { columnHeader12, columnHeader13 });
             lvChildren.Dock = DockStyle.Fill;
             lvChildren.Font = new Font("Segoe UI", 9.75F);
@@ -1154,7 +1153,6 @@
             // 
             // lvChildsChildren
             // 
-            lvChildsChildren.CheckBoxes = true;
             lvChildsChildren.Columns.AddRange(new ColumnHeader[] { columnHeader14, columnHeader15 });
             lvChildsChildren.Dock = DockStyle.Fill;
             lvChildsChildren.Font = new Font("Segoe UI", 9.75F);
@@ -1318,7 +1316,6 @@
             // 
             // lvSiblings
             // 
-            lvSiblings.CheckBoxes = true;
             lvSiblings.Columns.AddRange(new ColumnHeader[] { columnHeader16, columnHeader19 });
             lvSiblings.Dock = DockStyle.Fill;
             lvSiblings.Font = new Font("Segoe UI", 8.25F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -3314,7 +3311,7 @@
             // 
             purgeCheckedNodesTreesToolStripMenuItem.Name = "purgeCheckedNodesTreesToolStripMenuItem";
             purgeCheckedNodesTreesToolStripMenuItem.Size = new Size(281, 22);
-            purgeCheckedNodesTreesToolStripMenuItem.Text = "purge checked nodes trees";
+            purgeCheckedNodesTreesToolStripMenuItem.Text = "purge current node and it's tree";
             purgeCheckedNodesTreesToolStripMenuItem.Click += purgeCheckedNodesTreesToolStripMenuItem_Click;
             // 
             // entryToolStripMenuItem
