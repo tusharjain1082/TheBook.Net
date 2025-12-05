@@ -962,7 +962,7 @@ namespace DiaryJournal.Net
             }
 
             // reload empty slots system node
-            currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
+            //currentItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, currentItem.Id, true, false, true, false, true, true);
 
             // load registry item's node config from entry file
             String rtf = "";

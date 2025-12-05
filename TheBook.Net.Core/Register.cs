@@ -2550,6 +2550,12 @@ namespace TheBook.Net.Core
             {
                 // prev is root 0 so it's prev cannot be changed and is set to 0 but it's next is changed on nonzero next
                 prev.prevId = 0;
+                if (next.Id > 0)
+                {
+                    // assuming root 0 should be assigned a valid next which is nonzero node then we assign it to root's next because it is mandatory if
+                    // truly root 0 is being validly affected and if we don't assign it the nonzero next node then it causes integral corruption.
+                    prev.nextId = next.Id;
+                }
             }
             else
             {
