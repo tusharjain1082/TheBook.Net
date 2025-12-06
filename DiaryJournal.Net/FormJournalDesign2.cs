@@ -217,10 +217,6 @@ namespace DiaryJournal.Net
             dtpickerMDSearchThrough.Value = DateTime.Now;
             dtpickerMDSearchFromTime.Value = DateTime.Parse("0:00:00");
             dtpickerMDSearchThroughTime.Value = DateTime.Parse("23:59:59");
-            dtpickerDDSearchFrom.Value = DateTime.Now;
-            dtpickerDDSearchThrough.Value = DateTime.Now;
-            dtpickerDDSearchFromTime.Value = DateTime.Parse("0:00:00");
-            dtpickerDDSearchThroughTime.Value = DateTime.Parse("23:59:59");
 
             // configure
             //rtbEntry.HideSelection = rtbViewEntry.HideSelection = false;
@@ -2015,9 +2011,8 @@ namespace DiaryJournal.Net
                 dtpickerSearchFrom.Value, dtpickerSearchFromTime.Value, dtpickerSearchThrough.Value, dtpickerSearchThroughTime.Value, chkSearchUseDateRange.Checked,
                 dtpickerCDSearchFrom.Value, dtpickerCDSearchFromTime.Value, dtpickerCDSearchThrough.Value, dtpickerCDSearchThroughTime.Value, chkSearchUseCreationDateRange.Checked,
                 dtpickerMDSearchFrom.Value, dtpickerMDSearchFromTime.Value, dtpickerMDSearchThrough.Value, dtpickerMDSearchThroughTime.Value, chkSearchUseModificationDateRange.Checked,
-                dtpickerDDSearchFrom.Value, dtpickerDDSearchFromTime.Value, dtpickerDDSearchThrough.Value, dtpickerDDSearchThroughTime.Value, chkSearchUseDeletionDateRange.Checked,
                 rtbSearch.Text, rtbSearchReplace.Text, chkSearchAll.Checked,
-                chkSearchTrashCan.Checked, chkSearchMatchCase.Checked, chkSearchMatchWholeWord.Checked,
+                chkSearchMatchCase.Checked, chkSearchMatchWholeWord.Checked,
                 chkSearchReplace.Checked, chkSearchReplaceTitle.Checked, chkSearchEmptyString.Checked, locations);
 
             reload();
@@ -2109,10 +2104,6 @@ namespace DiaryJournal.Net
             dtpickerMDSearchFromTime.Value = DateTime.Parse("0:00:00");
             dtpickerMDSearchThrough.Value = DateTime.Now;
             dtpickerMDSearchThroughTime.Value = DateTime.Parse("23:59:59");
-            dtpickerDDSearchFrom.Value = DateTime.Now;
-            dtpickerDDSearchThrough.Value = DateTime.Now;
-            dtpickerDDSearchFromTime.Value = DateTime.Parse("0:00:00");
-            dtpickerDDSearchThroughTime.Value = DateTime.Parse("23:59:59");
             lvSearchWhere.Tag = null;
             lvSearchWhere.Items.Clear();
         }
@@ -2124,6 +2115,10 @@ namespace DiaryJournal.Net
 
             saveEntry();
 
+            if (MessageBox.Show("warning: are you sure you want to purge checked nodes? all of their descendants trees will also be forever purged along with them!\n" +
+            "there is no need to purge anything! you can recycle and reuse the nodes! you have 8+ million slots!", "warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
+                return;
+
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -2134,22 +2129,17 @@ namespace DiaryJournal.Net
             {
                 // delete checked nodes
                 Int64 id = Int64.Parse(listViewItem.Name);
-                myNode? node = entryMethods.FindNodeInList(allNodes, id);
-                if (node == null)
-                    return;
-
-                //todo entryMethods.DBDeleteOrPurgeNodeRecursive(dbCtx, ref worklist, node, true, false, false);
-
-                listViewItem.Checked = false;
-                listViewItem.Selected = true;
+                RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, id, false, false, false, false, true, true);
+                if (item == null) continue;
+                this.emptySlotsItem = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, this.emptySlotsItem.Id, false, false, false, false, true, true);
+                item.tree.Delete(item, emptySlotsItem);
             }
 
+            this.Invoke(toggleForm, false);
             formOperation.close();
 
-            // auto create/load all nodes
-            //todo mySystemNodes? systemNodes = null;
-            //reloadAll(true, true, true, true, ref systemNodes);
-
+            // reload to correct sync
+            reloadPath("0", true, null);
         }
 
         private void tsbuttonDeleteSearchedEntry_Click(object sender, EventArgs e)
@@ -2882,13 +2872,6 @@ namespace DiaryJournal.Net
         {
         }
 
-        private void buttonSearchResetDDates_Click(object sender, EventArgs e)
-        {
-            dtpickerDDSearchFrom.Value = DateTime.Now;
-            dtpickerDDSearchThrough.Value = DateTime.Now;
-            dtpickerDDSearchFromTime.Value = DateTime.Parse("0:00:00");
-            dtpickerDDSearchThroughTime.Value = DateTime.Parse("23:59:59");
-        }
         private void toolStripMenuItem46_Click(object sender, EventArgs e)
         {
             exportSet(DatabaseType.OpenFSDB, false);

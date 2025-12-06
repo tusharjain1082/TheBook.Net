@@ -134,8 +134,8 @@ namespace TheBook.Net.Core
 
         public myNode? node = null;
         public ChildrenRegister? children = null;
-        public String rtf = "";
-        public byte[]? xamlbytes = Array.Empty<byte>();
+        public String? rtf = null;
+        public byte[]? xamlbytes = null;
         public List<RegisterItem>? childrenList = null;
         public List<RegisterItem>? treeList = null;
 
@@ -1215,7 +1215,7 @@ namespace TheBook.Net.Core
             return count;
         }
         // returns the total number of entries which validly exist in all root ancestors
-        public static Int64 CountValidEntries(OpenFSDBContext? ctx, String file)
+        public static Int64 Total(OpenFSDBContext? ctx, String file)
         {
             // first get the latest state of root register by id
             RegisterItem? root = LoadSetupRegisterItem(ctx, file, 0, false, false, false, false, false, false);
@@ -2654,6 +2654,24 @@ namespace TheBook.Net.Core
             current = tail;
             return current;
         }
+
+        public Int64 CountDescendants()
+        {
+            if (parent == null) return -2;
+            Register.FindNode(ctx, registerFile, parent.Id, ref parent);
+            RegisterItem? original = current;
+            Int64 count = 0;
+            current = null;
+            while (true)
+            {
+                RegisterItem? nextItem = Next();
+                if (nextItem == null) break;
+                count++;
+            }
+            current = original;
+            return count;
+        }
+
 
         // we get all decendants in tree sequence of parent
         public bool GetDescendantTreeSequence(ref List<RegisterItem> listOut)

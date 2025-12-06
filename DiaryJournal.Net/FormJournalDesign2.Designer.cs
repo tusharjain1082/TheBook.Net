@@ -157,15 +157,6 @@
             label5 = new Label();
             dtpickerMDSearchFrom = new DateTimePicker();
             chkSearchUseModificationDateRange = new CheckBox();
-            tabPage4 = new TabPage();
-            groupBox12 = new GroupBox();
-            buttonSearchResetDDates = new Button();
-            dtpickerDDSearchThroughTime = new DateTimePicker();
-            dtpickerDDSearchFromTime = new DateTimePicker();
-            dtpickerDDSearchThrough = new DateTimePicker();
-            label6 = new Label();
-            dtpickerDDSearchFrom = new DateTimePicker();
-            chkSearchUseDeletionDateRange = new CheckBox();
             groupBox7 = new GroupBox();
             rtbSearch = new RichTextBox();
             menuRtbSearch = new ContextMenuStrip(components);
@@ -183,7 +174,6 @@
             chkSearchEmptyString = new CheckBox();
             chkSearchReplaceTitle = new CheckBox();
             chkSearchReplace = new CheckBox();
-            chkSearchTrashCan = new CheckBox();
             chkSearchAll = new CheckBox();
             lvSearch = new ListView();
             CHSearchMatches = new ColumnHeader();
@@ -192,7 +182,6 @@
             CHSearchCDT = new ColumnHeader();
             CHSearchMDT = new ColumnHeader();
             CHSearchDDT = new ColumnHeader();
-            CHSearchType = new ColumnHeader();
             CHSearchSpecialNodeType = new ColumnHeader();
             CHSearchNodeType = new ColumnHeader();
             CHSearchPID = new ColumnHeader();
@@ -533,8 +522,6 @@
             groupBox8.SuspendLayout();
             tabPage3.SuspendLayout();
             groupBox9.SuspendLayout();
-            tabPage4.SuspendLayout();
-            groupBox12.SuspendLayout();
             groupBox7.SuspendLayout();
             menuRtbSearch.SuspendLayout();
             groupBox3.SuspendLayout();
@@ -1457,7 +1444,6 @@
             tabControl1.Controls.Add(tabPage1);
             tabControl1.Controls.Add(tabPage2);
             tabControl1.Controls.Add(tabPage3);
-            tabControl1.Controls.Add(tabPage4);
             tabControl1.Location = new Point(706, 17);
             tabControl1.Name = "tabControl1";
             tabControl1.SelectedIndex = 0;
@@ -1535,10 +1521,10 @@
             // tabPage1
             // 
             tabPage1.Controls.Add(groupBox5);
-            tabPage1.Location = new Point(4, 24);
+            tabPage1.Location = new Point(4, 29);
             tabPage1.Name = "tabPage1";
             tabPage1.Padding = new Padding(3);
-            tabPage1.Size = new Size(362, 242);
+            tabPage1.Size = new Size(362, 237);
             tabPage1.TabIndex = 0;
             tabPage1.Text = "common date range";
             tabPage1.UseVisualStyleBackColor = true;
@@ -1632,10 +1618,10 @@
             // tabPage2
             // 
             tabPage2.Controls.Add(groupBox8);
-            tabPage2.Location = new Point(4, 24);
+            tabPage2.Location = new Point(4, 29);
             tabPage2.Name = "tabPage2";
             tabPage2.Padding = new Padding(3);
-            tabPage2.Size = new Size(362, 242);
+            tabPage2.Size = new Size(362, 237);
             tabPage2.TabIndex = 1;
             tabPage2.Text = "creation date range";
             tabPage2.UseVisualStyleBackColor = true;
@@ -1729,9 +1715,9 @@
             // tabPage3
             // 
             tabPage3.Controls.Add(groupBox9);
-            tabPage3.Location = new Point(4, 24);
+            tabPage3.Location = new Point(4, 29);
             tabPage3.Name = "tabPage3";
-            tabPage3.Size = new Size(362, 242);
+            tabPage3.Size = new Size(362, 237);
             tabPage3.TabIndex = 2;
             tabPage3.Text = "modification date range";
             tabPage3.UseVisualStyleBackColor = true;
@@ -1821,102 +1807,6 @@
             chkSearchUseModificationDateRange.TabIndex = 0;
             chkSearchUseModificationDateRange.Text = "use last modified (modification) date range";
             chkSearchUseModificationDateRange.UseVisualStyleBackColor = true;
-            // 
-            // tabPage4
-            // 
-            tabPage4.Controls.Add(groupBox12);
-            tabPage4.Location = new Point(4, 24);
-            tabPage4.Name = "tabPage4";
-            tabPage4.Size = new Size(362, 242);
-            tabPage4.TabIndex = 3;
-            tabPage4.Text = "deletion date range";
-            tabPage4.UseVisualStyleBackColor = true;
-            // 
-            // groupBox12
-            // 
-            groupBox12.Controls.Add(buttonSearchResetDDates);
-            groupBox12.Controls.Add(dtpickerDDSearchThroughTime);
-            groupBox12.Controls.Add(dtpickerDDSearchFromTime);
-            groupBox12.Controls.Add(dtpickerDDSearchThrough);
-            groupBox12.Controls.Add(label6);
-            groupBox12.Controls.Add(dtpickerDDSearchFrom);
-            groupBox12.Controls.Add(chkSearchUseDeletionDateRange);
-            groupBox12.Location = new Point(6, 10);
-            groupBox12.Name = "groupBox12";
-            groupBox12.Size = new Size(340, 220);
-            groupBox12.TabIndex = 7;
-            groupBox12.TabStop = false;
-            groupBox12.Text = "search by deletion date range";
-            // 
-            // buttonSearchResetDDates
-            // 
-            buttonSearchResetDDates.Location = new Point(181, 183);
-            buttonSearchResetDDates.Name = "buttonSearchResetDDates";
-            buttonSearchResetDDates.Size = new Size(150, 30);
-            buttonSearchResetDDates.TabIndex = 6;
-            buttonSearchResetDDates.Text = "reset both dates";
-            buttonSearchResetDDates.UseVisualStyleBackColor = true;
-            buttonSearchResetDDates.Click += buttonSearchResetDDates_Click;
-            // 
-            // dtpickerDDSearchThroughTime
-            // 
-            dtpickerDDSearchThroughTime.Format = DateTimePickerFormat.Time;
-            dtpickerDDSearchThroughTime.Location = new Point(6, 150);
-            dtpickerDDSearchThroughTime.Name = "dtpickerDDSearchThroughTime";
-            dtpickerDDSearchThroughTime.ShowUpDown = true;
-            dtpickerDDSearchThroughTime.Size = new Size(325, 27);
-            dtpickerDDSearchThroughTime.TabIndex = 5;
-            // 
-            // dtpickerDDSearchFromTime
-            // 
-            dtpickerDDSearchFromTime.Format = DateTimePickerFormat.Time;
-            dtpickerDDSearchFromTime.Location = new Point(6, 70);
-            dtpickerDDSearchFromTime.Name = "dtpickerDDSearchFromTime";
-            dtpickerDDSearchFromTime.ShowUpDown = true;
-            dtpickerDDSearchFromTime.Size = new Size(325, 27);
-            dtpickerDDSearchFromTime.TabIndex = 4;
-            // 
-            // dtpickerDDSearchThrough
-            // 
-            dtpickerDDSearchThrough.CalendarFont = new Font("Segoe UI", 11.25F);
-            dtpickerDDSearchThrough.CustomFormat = "dddd, dd MMMM yyyy";
-            dtpickerDDSearchThrough.Font = new Font("Segoe UI", 11.25F);
-            dtpickerDDSearchThrough.Format = DateTimePickerFormat.Custom;
-            dtpickerDDSearchThrough.Location = new Point(6, 120);
-            dtpickerDDSearchThrough.Name = "dtpickerDDSearchThrough";
-            dtpickerDDSearchThrough.Size = new Size(325, 27);
-            dtpickerDDSearchThrough.TabIndex = 3;
-            // 
-            // label6
-            // 
-            label6.AutoSize = true;
-            label6.Font = new Font("Segoe UI", 9F);
-            label6.Location = new Point(6, 100);
-            label6.Name = "label6";
-            label6.Size = new Size(50, 15);
-            label6.TabIndex = 2;
-            label6.Text = "through";
-            // 
-            // dtpickerDDSearchFrom
-            // 
-            dtpickerDDSearchFrom.CustomFormat = "dddd, dd MMMM yyyy";
-            dtpickerDDSearchFrom.Font = new Font("Segoe UI", 11.25F);
-            dtpickerDDSearchFrom.Format = DateTimePickerFormat.Custom;
-            dtpickerDDSearchFrom.Location = new Point(6, 40);
-            dtpickerDDSearchFrom.Name = "dtpickerDDSearchFrom";
-            dtpickerDDSearchFrom.Size = new Size(325, 27);
-            dtpickerDDSearchFrom.TabIndex = 1;
-            // 
-            // chkSearchUseDeletionDateRange
-            // 
-            chkSearchUseDeletionDateRange.AutoSize = true;
-            chkSearchUseDeletionDateRange.Font = new Font("Segoe UI", 9F);
-            chkSearchUseDeletionDateRange.Location = new Point(6, 20);
-            chkSearchUseDeletionDateRange.Name = "chkSearchUseDeletionDateRange";
-            chkSearchUseDeletionDateRange.Size = new Size(149, 19);
-            chkSearchUseDeletionDateRange.TabIndex = 0;
-            chkSearchUseDeletionDateRange.Text = "use deletion date range";
-            chkSearchUseDeletionDateRange.UseVisualStyleBackColor = true;
             // 
             // groupBox7
             // 
@@ -2035,7 +1925,6 @@
             groupBox4.Controls.Add(chkSearchEmptyString);
             groupBox4.Controls.Add(chkSearchReplaceTitle);
             groupBox4.Controls.Add(chkSearchReplace);
-            groupBox4.Controls.Add(chkSearchTrashCan);
             groupBox4.Controls.Add(chkSearchAll);
             groupBox4.Location = new Point(512, 139);
             groupBox4.Name = "groupBox4";
@@ -2075,16 +1964,6 @@
             chkSearchReplace.UseVisualStyleBackColor = true;
             chkSearchReplace.CheckedChanged += chkSearchReplace_CheckedChanged;
             // 
-            // chkSearchTrashCan
-            // 
-            chkSearchTrashCan.AutoSize = true;
-            chkSearchTrashCan.Location = new Point(6, 40);
-            chkSearchTrashCan.Name = "chkSearchTrashCan";
-            chkSearchTrashCan.Size = new Size(106, 24);
-            chkSearchTrashCan.TabIndex = 1;
-            chkSearchTrashCan.Text = "search trash";
-            chkSearchTrashCan.UseVisualStyleBackColor = true;
-            // 
             // chkSearchAll
             // 
             chkSearchAll.AutoSize = true;
@@ -2100,7 +1979,7 @@
             // lvSearch
             // 
             lvSearch.CheckBoxes = true;
-            lvSearch.Columns.AddRange(new ColumnHeader[] { CHSearchMatches, CHSearchFullPath, CHSearchDateTime, CHSearchCDT, CHSearchMDT, CHSearchDDT, CHSearchType, CHSearchSpecialNodeType, CHSearchNodeType, CHSearchPID, CHSearchID, CHSearchTitle, CHSearchReport });
+            lvSearch.Columns.AddRange(new ColumnHeader[] { CHSearchMatches, CHSearchFullPath, CHSearchDateTime, CHSearchCDT, CHSearchMDT, CHSearchDDT, CHSearchSpecialNodeType, CHSearchNodeType, CHSearchPID, CHSearchID, CHSearchTitle, CHSearchReport });
             lvSearch.ContextMenuStrip = menuLists;
             lvSearch.Dock = DockStyle.Fill;
             lvSearch.Font = new Font("Segoe UI", 8.25F);
@@ -2143,11 +2022,6 @@
             // 
             CHSearchDDT.Text = "deletion date time";
             CHSearchDDT.Width = 250;
-            // 
-            // CHSearchType
-            // 
-            CHSearchType.Text = "entry type";
-            CHSearchType.Width = 100;
             // 
             // CHSearchSpecialNodeType
             // 
@@ -4206,9 +4080,6 @@
             tabPage3.ResumeLayout(false);
             groupBox9.ResumeLayout(false);
             groupBox9.PerformLayout();
-            tabPage4.ResumeLayout(false);
-            groupBox12.ResumeLayout(false);
-            groupBox12.PerformLayout();
             groupBox7.ResumeLayout(false);
             menuRtbSearch.ResumeLayout(false);
             groupBox3.ResumeLayout(false);
@@ -4378,7 +4249,6 @@
         private CheckBox chkSearchMatchCase;
         private GroupBox groupBox3;
         private GroupBox groupBox4;
-        private CheckBox chkSearchTrashCan;
         private CheckBox chkSearchAll;
         private GroupBox groupBox5;
         private CheckBox chkSearchUseDateRange;
@@ -4392,7 +4262,6 @@
         private ColumnHeader CHSearchDateTime;
         private ColumnHeader CHSearchMatches;
         private ColumnHeader CHSearchTitle;
-        private ColumnHeader CHSearchType;
         private System.ComponentModel.BackgroundWorker bgWorkerSearch;
         private ToolStripProgressBar tsSearchProgressBar;
         private GroupBox groupBox7;
@@ -4511,15 +4380,6 @@
         private TabPage tabPage1;
         private TabPage tabPage2;
         private TabPage tabPage3;
-        private TabPage tabPage4;
-        private GroupBox groupBox12;
-        private Button buttonSearchResetDDates;
-        private DateTimePicker dtpickerDDSearchThroughTime;
-        private DateTimePicker dtpickerDDSearchFromTime;
-        private DateTimePicker dtpickerDDSearchThrough;
-        private Label label6;
-        private DateTimePicker dtpickerDDSearchFrom;
-        private CheckBox chkSearchUseDeletionDateRange;
         private ToolStripMenuItem toolStripMenuItem46;
         private ToolStripMenuItem toolStripMenuItem47;
         private ToolStripMenuItem toolStripMenuItem48;

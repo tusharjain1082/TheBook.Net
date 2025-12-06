@@ -331,7 +331,7 @@ namespace DiaryJournal.Net
             if (destBasePath == "") return false;
 
             // first get the total number of chapters which exist in db
-            long total = Register.CountValidEntries(src, src.dbNodeTreeRegistryFile);
+            long total = Register.Total(src, src.dbNodeTreeRegistryFile);
             long index = 0;
 
             // first replicate initial db and config

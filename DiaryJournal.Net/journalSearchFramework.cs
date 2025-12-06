@@ -5,12 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 using System.Windows.Documents;
-using System.Xml.Xsl;
-using System.Xml;
 using System.Windows.Controls;
-using System.Windows;
-using System.Windows.Markup;
-using System.Runtime.InteropServices;
 using TheBook.Net.Core;
 
 namespace DiaryJournal.Net
@@ -32,12 +27,6 @@ namespace DiaryJournal.Net
             item.SubItems.Add(found.node.chapter.creationDateTime.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
             item.SubItems.Add(found.node.chapter.modificationDateTime.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
             item.SubItems.Add(found.node.chapter.deletionDateTime.ToString("dddd, dd MMMM yyyy HH:mm:ss"));
-
-            // deleted status
-            if (found.node.chapter.IsDeleted)
-                item.SubItems.Add("trash can");
-            else
-                item.SubItems.Add("common");
 
             // special node type
             item.SubItems.Add(found.node.chapter.specialNodeType.ToString());
@@ -61,10 +50,8 @@ namespace DiaryJournal.Net
             DateTime inputFrom, DateTime inputFromTime, DateTime inputThrough, DateTime inputThroughTime, bool useDateTimeRange,
             DateTime inputCDFrom, DateTime inputCDFromTime, DateTime inputCDThrough, DateTime inputCDThroughTime, bool useCreationDateTimeRange,
             DateTime inputMDFrom, DateTime inputMDFromTime, DateTime inputMDThrough, DateTime inputMDThroughTime, bool useModificationDateTimeRange,
-            DateTime inputDDFrom, DateTime inputDDFromTime, DateTime inputDDThrough, DateTime inputDDThroughTime, bool useDeletionDateTimeRange,
             String searchPattern, String replacement, bool searchAll,
-            bool searchTrash, bool matchCase, bool matchWholeWord,
-            bool replace, bool searchReplaceTitle, bool searchEmptyString, List<Int64> locations)
+            bool matchCase, bool matchWholeWord, bool replace, bool searchReplaceTitle, bool searchEmptyString, List<Int64> locations)
         {
             // prepare regex
             RegexOptions regexOptions = new RegexOptions();
@@ -159,31 +146,6 @@ namespace DiaryJournal.Net
 
             }
 
-            // prepare entry deletion date and time range
-            DateTime DDfrom = DateTime.MinValue;
-            DateTime DDthrough = DateTime.MaxValue;
-
-            // use user's date and time range if required
-            if (useDeletionDateTimeRange)
-            {
-                // choose user's given deletion date time range if available
-                if (inputDDFrom != default(DateTime))
-                {
-                    DDfrom = new DateTime(inputDDFrom.Year, inputDDFrom.Month, inputDDFrom.Day, inputDDFromTime.Hour, inputDDFromTime.Minute,
-                        inputDDFromTime.Second, 0);
-                }
-                // choose user's given deletion date time range if available
-                if (inputDDThrough != default(DateTime))
-                {
-                    DDthrough = new DateTime(inputDDThrough.Year, inputDDThrough.Month, inputDDThrough.Day, inputDDThroughTime.Hour,
-                        inputDDThroughTime.Minute, inputDDThroughTime.Second, 0);
-                }
-                int result0 = DateTime.Compare(DDfrom, DDthrough);
-                if (result0 > 0)
-                    return false; // error, invalid date time input
-
-            }
-
             // successfully prepared all config
             // verify if the pattern is valid.
             if (!searchEmptyString)
@@ -192,8 +154,7 @@ namespace DiaryJournal.Net
                     return false;
             }
 
-            WpfRichTextBoxEx rtb = new WpfRichTextBoxEx();
-            //System.Windows.Forms.RichTextBox rtbnative = new System.Windows.Forms.RichTextBox();
+            WpfRichTextBoxEx rtb = xamlEntry.dummy;
 
             // select search location if user demands it
             List<Int64>? worklist = locations;
@@ -205,25 +166,21 @@ namespace DiaryJournal.Net
                 // no location provided, so load root's children as worklist and traverse each tree
                 RegisterItem? root = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, 0, false, false, true, false, true, true);
                 if (root == null) return false; // error abort
-                foreach (RegisterItem? item in root.childrenList)
-                    worklist.Add(item.Id);
-
+                worklist.Add(root.Id);
                 // prepare counter and progress
-                total = Register.CountValidEntries(ctx, ctx.dbNodeTreeRegistryFile);
-                total -= 1; // negate root node
+                total = Register.Total(ctx, ctx.dbNodeTreeRegistryFile);
+                total += 1; // increment root
             }
             else
             {
-                /* todo 02 December 2025
                 // prepare counter and progress
                 foreach (Int64 id in worklist)
                 {
-                    RegisterItem? thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, id, false, false, false, false, false, true);
+                    RegisterItem? thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, id, false, false, false, false, true, true);
                     if (thisItem == null) continue;
-                    total += thisItem.tree.CountDescendants(thisItem);
+                    total += thisItem.tree.CountDescendants();
                     total += 1; // increment this current item
                 }
-                */
             }
 
             // initialize a single regex for all operations
@@ -231,52 +188,31 @@ namespace DiaryJournal.Net
             Regex regex = new Regex(searchPattern, regexOptions);
             String entryPath = "";
 
-            // phase 1 - first iterate through all locations list
+            // phase 1 - parent to all it's descendants using worklist
 
-            foreach (Int64 thisItemId in worklist)//RegisterItem item in worklist)
+            foreach (Int64 thisItemId in worklist)
             {
-                RegisterItem? thisItem = null;
-                String rtf = "";
-
-                if (searchEmptyString)
-                    thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, thisItemId, true, false, false, false, false, false);
-                else
-                    thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, thisItemId, true, true, false, false, false, false);
-
+                RegisterItem? thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, thisItemId, false, false, false, false, true, true);
                 if (thisItem == null) continue;
-                
-                myNode? node = thisItem.node;
-
-                done++;
-                tsProgressBar.Value = (int)Math.Round((double)(100 * done) / total);
-
-                // if this chapter is deleted but user doesn't wants to get deleted entries, so skip this chapter.
-                if (node.chapter.IsDeleted && !searchTrash)
-                    continue;
-
-                // if both options are off, so quit
-                if (!searchAll && !searchTrash)
-                    return false;
-
-                if (searchAll)
+                if (!searchEmptyString)
                 {
-                    // if this chapter is deleted but user doesn't wants to get deleted entries, so skip this chapter.
-                    if (node.chapter.IsDeleted && !searchTrash)
-                        continue;
-
-                }
-                else if (searchTrash)
-                {
-                    if (!node.chapter.IsDeleted)
-                        continue; // user unchecked search all entries but deleted, this entry isn't deleted, so skip it.
-
+                    thisItem.loadNode(ctx, ref thisItem.rtf, ref thisItem.xamlbytes, true);
+                    if (thisItem.xamlbytes != null)
+                        rtb.XamlBytes = thisItem.xamlbytes;
+                    else if (thisItem.rtf != null)
+                        rtb.Rtf = thisItem.rtf;
+                    else
+                        rtb.Rtf = "";
                 }
                 else
                 {
-                    // no option chosen, return empty list
-                    GC.Collect();
-                    return false;
+                    thisItem.loadNode(ctx, ref thisItem.rtf, ref thisItem.xamlbytes, false);
+                    rtb.Rtf = "";
                 }
+
+                myNode? node = thisItem.node;
+                done += 1;
+                tsProgressBar.Value = (int)Math.Round((double)(100 * done) / total);
 
                 // entry date and time range check
                 DateTime chapterDate = new DateTime(node.chapter.chapterDateTime.Year, node.chapter.chapterDateTime.Month,
@@ -314,18 +250,6 @@ namespace DiaryJournal.Net
                 if (result2 > 0)
                     continue; // date mismatch
 
-                // entry deletion date and time range check
-                DateTime chapterDeletionDate = new DateTime(node.chapter.deletionDateTime.Year, node.chapter.deletionDateTime.Month,
-                    node.chapter.deletionDateTime.Day, node.chapter.deletionDateTime.Hour,
-                    node.chapter.deletionDateTime.Minute, node.chapter.deletionDateTime.Second, 0);
-                result1 = DateTime.Compare(chapterDeletionDate, DDfrom);
-                result2 = DateTime.Compare(chapterDeletionDate, DDthrough);
-                if (result1 < 0)
-                    continue; // date mismatch
-
-                if (result2 > 0)
-                    continue; // date mismatch
-
                 bool matchesFound = false;
                 long totalMatches = 0;
 
@@ -341,226 +265,9 @@ namespace DiaryJournal.Net
                     // no text to find and therefore nothing to replace. so directly list this entry/node because other 
                     // search parameters are valid at this place.
                     __insertLvSearchItem(ctx, lv, thisItem, entryPath, totalMatches);
-                    continue; // bypass regex text search and replace.
                 }
-
-                // configure richtextbox
-                try
+                else
                 {
-                    rtb.Rtf = rtf;// rtbnative.Rtf;
-                }
-                catch (Exception)
-                {
-                    continue;
-                }
-
-                // both node's title and node's body must not be searched and replaced simultaneusly.
-                // this is illogical because it confuses the user and also mistakenly
-                // replaces the title when it must not be replaced without user's special requirement.
-                // therefore node's title and node's body shall be separately searched and replaced.
-                if (!searchReplaceTitle)
-                {
-                    // node's body
-
-                    // initialize search and generate collection
-                    FindReplaceFramework.MatchedTextCollection col = FindReplaceFramework.MatchedTextCollection.initializeSearch(ref regexOptions,
-                        rtb.Document, searchPattern);
-
-                    // replace if demanded
-                    if (col.Count > 0)
-                    {
-                        // update
-                        matchesFound = true;
-                        totalMatches += col.Count;
-
-                        // finally commit replace if user requires right here
-                        if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
-                        {
-                            // begin with first or another node
-                            col.Next(true);
-                            while (col.current != null)
-                            {
-                                // set selection and replace
-                                TextRange selection = new TextRange(col.current.start, col.current.end);
-                                selection.Text = replacement;
-                                col.Remove(ref col.current);
-                                col.Next(true); // to the next node
-                            }
-                        }
-                    }
-                }
-
-                if (searchReplaceTitle)
-                {
-                    // node's title
-
-                    // check and update node's title
-                    MatchCollection matches1 = regex.Matches(node.chapter.Title);
-                    if (matches1.Count > 0)
-                    {
-                        if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
-                        {
-                            node.chapter.Title = regex.Replace(node.chapter.Title, replacement);
-                        }
-                        matchesFound = true;
-                        totalMatches += matches1.Count;
-                    }
-                }
-
-                // finally update node in db
-                if (matchesFound)
-                {
-                    if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
-                    {
-                        entryMethods.DBUpdateNodeOFSDB(ctx, node, rtb.Rtf, rtb.XamlBytes, true); // nonsystem node so change it
-                    }
-                    __insertLvSearchItem(ctx, lv, thisItem, entryPath, totalMatches);
-                }
-
-            }
-
-            // phase 2 - now traverse locations true descendants tree
-
-            foreach (Int64 thisItemId in worklist)//RegisterItem item in worklist)
-            {
-                RegisterItem? thisItem = null;
-                String rtf = "";
-                thisItem = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, thisItemId, false, false, false, false, true, true);
-                if (thisItem == null) continue;
-
-                // traverse tree process only true descendants of this location item
-
-                while (true)
-                {
-                    // load item from registry
-                    RegisterItem? nextDescendant = thisItem.tree.Next();
-                    if (nextDescendant == null) break;
-
-                    if (!Register.IsDescendantOfAncestor(ctx, ctx.dbNodeTreeRegistryFile, nextDescendant, thisItem))
-                        continue; // this descendant is not true descendant of current item so skip
-
-                    // this descendant is true descendant of current location item so process it
-
-                    rtf = "";
-                    byte[]? xamlbytes = null;
-                    if (searchEmptyString)
-                        nextDescendant.loadNode(ctx, ref rtf, ref xamlbytes, false);
-                    else
-                        nextDescendant.loadNode(ctx, ref rtf, ref xamlbytes, true);
-
-                    myNode? node = nextDescendant.node;
-
-                    done++;
-                    tsProgressBar.Value = (int)Math.Round((double)(100 * done) / total);
-
-                    // if this chapter is deleted but user doesn't wants to get deleted entries, so skip this chapter.
-                    if (node.chapter.IsDeleted && !searchTrash)
-                        continue;
-
-                    // if both options are off, so quit
-                    if (!searchAll && !searchTrash)
-                        return false;
-
-                    if (searchAll)
-                    {
-                        // if this chapter is deleted but user doesn't wants to get deleted entries, so skip this chapter.
-                        if (node.chapter.IsDeleted && !searchTrash)
-                            continue;
-
-                    }
-                    else if (searchTrash)
-                    {
-                        if (!node.chapter.IsDeleted)
-                            continue; // user unchecked search all entries but deleted, this entry isn't deleted, so skip it.
-
-                    }
-                    else
-                    {
-                        // no option chosen, return empty list
-                        GC.Collect();
-                        return false;
-                    }
-
-                    // entry date and time range check
-                    DateTime chapterDate = new DateTime(node.chapter.chapterDateTime.Year, node.chapter.chapterDateTime.Month,
-                        node.chapter.chapterDateTime.Day, node.chapter.chapterDateTime.Hour,
-                        node.chapter.chapterDateTime.Minute, node.chapter.chapterDateTime.Second, 0);
-                    int result1 = DateTime.Compare(chapterDate, from);
-                    int result2 = DateTime.Compare(chapterDate, through);
-                    if (result1 < 0)
-                        continue; // date mismatch
-
-                    if (result2 > 0)
-                        continue; // date mismatch
-
-                    // entry true creation date and time range check
-                    DateTime chapterCreationDate = new DateTime(node.chapter.creationDateTime.Year, node.chapter.creationDateTime.Month,
-                        node.chapter.creationDateTime.Day, node.chapter.creationDateTime.Hour,
-                        node.chapter.creationDateTime.Minute, node.chapter.creationDateTime.Second, 0);
-                    result1 = DateTime.Compare(chapterCreationDate, CDfrom);
-                    result2 = DateTime.Compare(chapterCreationDate, CDthrough);
-                    if (result1 < 0)
-                        continue; // date mismatch
-
-                    if (result2 > 0)
-                        continue; // date mismatch
-
-                    // entry modification date and time range check
-                    DateTime chapterModificationDate = new DateTime(node.chapter.modificationDateTime.Year, node.chapter.modificationDateTime.Month,
-                        node.chapter.modificationDateTime.Day, node.chapter.modificationDateTime.Hour,
-                        node.chapter.modificationDateTime.Minute, node.chapter.modificationDateTime.Second, 0);
-                    result1 = DateTime.Compare(chapterModificationDate, MDfrom);
-                    result2 = DateTime.Compare(chapterModificationDate, MDthrough);
-                    if (result1 < 0)
-                        continue; // date mismatch
-
-                    if (result2 > 0)
-                        continue; // date mismatch
-
-                    // entry deletion date and time range check
-                    DateTime chapterDeletionDate = new DateTime(node.chapter.deletionDateTime.Year, node.chapter.deletionDateTime.Month,
-                        node.chapter.deletionDateTime.Day, node.chapter.deletionDateTime.Hour,
-                        node.chapter.deletionDateTime.Minute, node.chapter.deletionDateTime.Second, 0);
-                    result1 = DateTime.Compare(chapterDeletionDate, DDfrom);
-                    result2 = DateTime.Compare(chapterDeletionDate, DDthrough);
-                    if (result1 < 0)
-                        continue; // date mismatch
-
-                    if (result2 > 0)
-                        continue; // date mismatch
-
-                    bool matchesFound = false;
-                    long totalMatches = 0;
-
-
-                    List<RegisterItem>? lineage = null;
-                    Register.Lineage(ctx, ctx.dbNodeTreeRegistryFile, nextDescendant, ref lineage, true, true, false);
-                    entryPath = Register.LineageFullPath(lineage);
-                    form.updateSearchProgressPath(entryPath);
-
-                    // user demands empty string meaning he demands to find entries only by their configuration parameters
-                    // like creation date modification date and so and so.
-                    if (searchEmptyString)
-                    {
-                        // no text to find and therefore nothing to replace. so directly list this entry/node because other 
-                        // search parameters are valid at this place.
-                        __insertLvSearchItem(ctx, lv, nextDescendant, entryPath, totalMatches);
-                        continue; // bypass regex text search and replace.
-                    }
-
-                    // configure richtextbox
-                    try
-                    {
-                        if (ctx.dbEntryType == EntryType.Xaml)
-                            rtb.XamlBytes = xamlbytes;
-                        else
-                            rtb.Rtf = rtf;// rtbnative.Rtf;
-                    }
-                    catch (Exception)
-                    {
-                        continue;
-                    }
-
                     // both node's title and node's body must not be searched and replaced simultaneusly.
                     // this is illogical because it confuses the user and also mistakenly
                     // replaces the title when it must not be replaced without user's special requirement.
@@ -581,7 +288,8 @@ namespace DiaryJournal.Net
                             totalMatches += col.Count;
 
                             // finally commit replace if user requires right here
-                            if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
+                            if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                                || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
                             {
                                 // begin with first or another node
                                 col.Next(true);
@@ -605,7 +313,8 @@ namespace DiaryJournal.Net
                         MatchCollection matches1 = regex.Matches(node.chapter.Title);
                         if (matches1.Count > 0)
                         {
-                            if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
+                            if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                                || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
                             {
                                 node.chapter.Title = regex.Replace(node.chapter.Title, replacement);
                             }
@@ -617,19 +326,165 @@ namespace DiaryJournal.Net
                     // finally update node in db
                     if (matchesFound)
                     {
-                        if ((replace) && (node.chapter.specialNodeType != SpecialNodeType.SystemNode))
+                        if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                            || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
                         {
                             entryMethods.DBUpdateNodeOFSDB(ctx, node, rtb.Rtf, rtb.XamlBytes, true); // nonsystem node so change it
                         }
-                        __insertLvSearchItem(ctx, lv, nextDescendant, entryPath, totalMatches);
+                        __insertLvSearchItem(ctx, lv, thisItem, entryPath, totalMatches);
+                    }
+                }
+
+                // phase 2 - now traverse descendants tree sequence of this parent
+                while (true)
+                {
+                    RegisterItem? descendant = thisItem.tree.Next();
+                    if (descendant == null) break; // no more descendant so break
+                    if (!searchEmptyString)
+                    {
+                        descendant.loadNode(ctx, ref descendant.rtf, ref descendant.xamlbytes, true);
+                        if (descendant.xamlbytes != null)
+                            rtb.XamlBytes = descendant.xamlbytes;
+                        else if (thisItem.rtf != null)
+                            rtb.Rtf = descendant.rtf;
+                        else
+                            rtb.Rtf = "";
+                    }
+                    else
+                    {
+                        descendant.loadNode(ctx, ref descendant.rtf, ref descendant.xamlbytes, false);
+                        rtb.Rtf = "";
+                    }
+
+                    node = descendant.node;
+                    done += 1;
+                    tsProgressBar.Value = (int)Math.Round((double)(100 * done) / total);
+
+                    // entry date and time range check
+                    chapterDate = new DateTime(node.chapter.chapterDateTime.Year, node.chapter.chapterDateTime.Month,
+                        node.chapter.chapterDateTime.Day, node.chapter.chapterDateTime.Hour,
+                        node.chapter.chapterDateTime.Minute, node.chapter.chapterDateTime.Second, 0);
+                    result1 = DateTime.Compare(chapterDate, from);
+                    result2 = DateTime.Compare(chapterDate, through);
+                    if (result1 < 0)
+                        continue; // date mismatch
+
+                    if (result2 > 0)
+                        continue; // date mismatch
+
+                    // entry true creation date and time range check
+                    chapterCreationDate = new DateTime(node.chapter.creationDateTime.Year, node.chapter.creationDateTime.Month,
+                        node.chapter.creationDateTime.Day, node.chapter.creationDateTime.Hour,
+                        node.chapter.creationDateTime.Minute, node.chapter.creationDateTime.Second, 0);
+                    result1 = DateTime.Compare(chapterCreationDate, CDfrom);
+                    result2 = DateTime.Compare(chapterCreationDate, CDthrough);
+                    if (result1 < 0)
+                        continue; // date mismatch
+
+                    if (result2 > 0)
+                        continue; // date mismatch
+
+                    // entry modification date and time range check
+                    chapterModificationDate = new DateTime(node.chapter.modificationDateTime.Year, node.chapter.modificationDateTime.Month,
+                        node.chapter.modificationDateTime.Day, node.chapter.modificationDateTime.Hour,
+                        node.chapter.modificationDateTime.Minute, node.chapter.modificationDateTime.Second, 0);
+                    result1 = DateTime.Compare(chapterModificationDate, MDfrom);
+                    result2 = DateTime.Compare(chapterModificationDate, MDthrough);
+                    if (result1 < 0)
+                        continue; // date mismatch
+
+                    if (result2 > 0)
+                        continue; // date mismatch
+
+                    matchesFound = false;
+                    totalMatches = 0;
+
+                    lineage = null;
+                    Register.Lineage(ctx, ctx.dbNodeTreeRegistryFile, descendant, ref lineage, true, true, false);
+                    entryPath = Register.LineageFullPath(lineage);
+                    form.updateSearchProgressPath(entryPath);
+
+                    // user demands empty string meaning he demands to find entries only by their configuration parameters
+                    // like creation date modification date and so and so.
+                    if (searchEmptyString)
+                    {
+                        // no text to find and therefore nothing to replace. so directly list this entry/node because other 
+                        // search parameters are valid at this place.
+                        __insertLvSearchItem(ctx, lv, descendant, entryPath, totalMatches);
+                        continue; // bypass regex text search and replace.
+                    }
+                    else
+                    {
+                        // both node's title and node's body must not be searched and replaced simultaneusly.
+                        // this is illogical because it confuses the user and also mistakenly
+                        // replaces the title when it must not be replaced without user's special requirement.
+                        // therefore node's title and node's body shall be separately searched and replaced.
+                        if (!searchReplaceTitle)
+                        {
+                            // node's body
+
+                            // initialize search and generate collection
+                            FindReplaceFramework.MatchedTextCollection col = FindReplaceFramework.MatchedTextCollection.initializeSearch(ref regexOptions,
+                                rtb.Document, searchPattern);
+
+                            // replace if demanded
+                            if (col.Count > 0)
+                            {
+                                // update
+                                matchesFound = true;
+                                totalMatches += col.Count;
+
+                                // finally commit replace if user requires right here
+                                if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                                    || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
+                                {
+                                    // begin with first or another node
+                                    col.Next(true);
+                                    while (col.current != null)
+                                    {
+                                        // set selection and replace
+                                        TextRange selection = new TextRange(col.current.start, col.current.end);
+                                        selection.Text = replacement;
+                                        col.Remove(ref col.current);
+                                        col.Next(true); // to the next node
+                                    }
+                                }
+                            }
+                        }
+
+                        if (searchReplaceTitle)
+                        {
+                            // node's title
+
+                            // check and update node's title
+                            MatchCollection matches1 = regex.Matches(node.chapter.Title);
+                            if (matches1.Count > 0)
+                            {
+                                if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                                    || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
+                                {
+                                    node.chapter.Title = regex.Replace(node.chapter.Title, replacement);
+                                }
+                                matchesFound = true;
+                                totalMatches += matches1.Count;
+                            }
+                        }
+
+                        // finally update node in db
+                        if (matchesFound)
+                        {
+                            if ((replace) && (!ctx.readOnly) && (node.chapter.specialNodeType == SpecialNodeType.None || node.chapter.specialNodeType == SpecialNodeType.AnyOrAll
+                                || node.chapter.specialNodeType == SpecialNodeType.NonSystemNode))
+                            {
+                                entryMethods.DBUpdateNodeOFSDB(ctx, node, rtb.Rtf, rtb.XamlBytes, true); // nonsystem node so change it
+                            }
+                            __insertLvSearchItem(ctx, lv, descendant, entryPath, totalMatches);
+                        }
                     }
                 }
             }
-
             // done
             tsProgressBar.Value = 0;
-            //txtSearchProgressPath.Text = "";
-            GC.Collect();
             return true;
         }
     }

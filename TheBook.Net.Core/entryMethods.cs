@@ -2100,7 +2100,7 @@ namespace DiaryJournal.Net
             processed = 0;
 
             // first get the total number of chapters which exist in db
-            long total = Register.CountValidEntries(ctx, ctx.dbNodeTreeRegistryFile);
+            long total = Register.Total(ctx, ctx.dbNodeTreeRegistryFile);
             long index = 0;
 
             // first get the latest state of root register by id
@@ -2161,7 +2161,7 @@ namespace DiaryJournal.Net
             processed = 0;
 
             // first get the total number of chapters which exist in db
-            long total = Register.CountValidEntries(ctx, ctx.dbNodeTreeRegistryFile);
+            long total = Register.Total(ctx, ctx.dbNodeTreeRegistryFile);
             long index = 0;
 
             // first get the latest state of root register by id

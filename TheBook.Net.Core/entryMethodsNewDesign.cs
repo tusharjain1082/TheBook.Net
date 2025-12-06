@@ -370,9 +370,9 @@ namespace TheBook.Net.Core
         }
         // load node from registry item
         public static bool DBFindLoadNode(OpenFSDBContext? ctx,
-            RegisterItem item, ref String rtfOut, bool loadData, ref myNode? nodeOut, ref byte[]? xamlbytesOut)
+            RegisterItem item, ref String? rtfOut, bool loadData, ref myNode? nodeOut, ref byte[]? xamlbytesOut)
         {
-            String rtf = "";
+            String? rtf = null;
             myNode? node = OpenFileSystemDB.findLoadNode(ctx, item.sectionId, item.Id, ref rtf, ref xamlbytesOut, loadData);
             if (node == null) return false;
 
