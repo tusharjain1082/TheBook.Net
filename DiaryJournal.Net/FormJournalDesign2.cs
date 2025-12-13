@@ -641,6 +641,13 @@ namespace DiaryJournal.Net
                 return;
             }
 
+            if (parent.depth >= 255)
+            {
+                reloadPath("", false, parent);
+                MessageBox.Show($"error entry not created. maximum depth limit 255 reached for/in this target parent.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // now create registry and node
             byte[]? xamlbytes = null;
             RegisterItem? item = Register.Insert(dbCtx, dbCtx.dbNodeTreeRegistryFile, parent.Id, emptySlotsItem, node, "", xamlbytes);
@@ -2514,6 +2521,13 @@ namespace DiaryJournal.Net
             RegisterItem? dst = Register.LoadSetupRegisterItem(dbCtx, dbCtx.dbNodeTreeRegistryFile, destId, true, false, false, false, true, true);
             if (dst == null) return;
 
+            if (dst.depth >= 255)
+            {
+                reloadPath("", false, parent);
+                MessageBox.Show($"error entry not created. maximum depth limit 255 reached for/in this target parent.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // move from parent to another location
             parent.children.Move(currentItem, dst);
 
@@ -3574,6 +3588,12 @@ namespace DiaryJournal.Net
             if (parent.childrenCount >= Register.default_maxChildrenNodes)
             {
                 MessageBox.Show($"error entry not created. maximum direct new children create/insert limit [{Register.default_maxChildrenNodes}] reached for/in this target parent.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
+            }
+            if (parent.depth >= 255)
+            {
+                reloadPath("", false, parent);
+                MessageBox.Show($"error entry not created. maximum depth limit 255 reached for/in this target parent.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
 

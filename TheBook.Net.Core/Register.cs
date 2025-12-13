@@ -111,7 +111,7 @@ namespace TheBook.Net.Core
     {
         public Int64 position = 0;
 
-        public const int blockSize = ((sizeof(Int64) * 10) + 4);
+        public const int blockSize = ((sizeof(Int64) * 10) + 5);
         public Int64 Id = 0;
 
         // 10 Int64 * 8 bytes = 80 bytes binary block is made of all these elements =
@@ -131,6 +131,7 @@ namespace TheBook.Net.Core
         public SpecialNodeType specialNodeType = SpecialNodeType.None;
         public DomainType domainType = DomainType.Journal;
         public RegisterItemFlags1 flags1 = RegisterItemFlags1.None;
+        public Byte depth = 0;
 
         public myNode? node = null;
         public ChildrenRegister? children = null;
@@ -148,7 +149,7 @@ namespace TheBook.Net.Core
         public RegisterItem(Int64 position, Int64 id, Int64 parentid, Int64 sectionid, Int64 childrenCount,
             Int64 headId, Int64 tailId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType, RegisterItemFlags1 flags1,
-            Int64 usedSlots, Int64 nextId, Int64 prevId)
+            Int64 usedSlots, Int64 nextId, Int64 prevId, Byte depth)
         {
             this.position = position;
             this.Id = id;
@@ -166,6 +167,7 @@ namespace TheBook.Net.Core
             this.specialNodeType = specialNodeType;
             this.domainType = domainType;
             this.flags1 = flags1;
+            this.depth = depth;
         }
 
         public void CopyFrom(RegisterItem? item)
@@ -187,6 +189,7 @@ namespace TheBook.Net.Core
             this.specialNodeType = item.specialNodeType;
             this.domainType = item.domainType;
             this.flags1 = item.flags1;
+            this.depth = item.depth;
 
         }
         public void CopyFrom(myNode node, bool copyId, bool copyParentId, bool copySectionId)
@@ -250,12 +253,13 @@ namespace TheBook.Net.Core
             bw.Write((byte)node.chapter.specialNodeType);
             bw.Write((byte)node.chapter.domainType);
             bw.Write((byte)0);
+            bw.Write((byte)0);
             return ms.ToArray();
         }
         public static byte[] convertToBytes(Int64 id, Int64 parentId, Int64 sectionId, Int64 childrenCount,
             Int64 headId, Int64 tailId, Int64 nextSiblingId, Int64 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType, RegisterItemFlags1 flags1,
-            Int64 usedSlots, Int64 nextId, Int64 prevId)
+            Int64 usedSlots, Int64 nextId, Int64 prevId, Byte depth)
         {
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
@@ -273,6 +277,7 @@ namespace TheBook.Net.Core
             bw.Write((byte)specialNodeType);
             bw.Write((byte)domainType);
             bw.Write((byte)flags1);
+            bw.Write((byte)depth);
             return ms.ToArray();
         }
         public static byte[] convertToBytes(RegisterItem item)
@@ -293,6 +298,7 @@ namespace TheBook.Net.Core
             bw.Write((byte)item.specialNodeType);
             bw.Write((byte)item.domainType);
             bw.Write((byte)item.flags1);
+            bw.Write((byte)item.depth);
             return ms.ToArray();
         }
         public static RegisterItem? convertFromBytesStream(Stream s)
@@ -325,6 +331,7 @@ namespace TheBook.Net.Core
             item.specialNodeType = (SpecialNodeType)br.ReadByte();
             item.domainType = (DomainType)br.ReadByte();
             item.flags1 = (RegisterItemFlags1)br.ReadByte();
+            item.depth = br.ReadByte();
             return item; // valid node is found
         }
         public static RegisterItem? Root(Stream s)
@@ -357,6 +364,7 @@ namespace TheBook.Net.Core
             item.specialNodeType = (SpecialNodeType)br.ReadByte();
             item.domainType = (DomainType)br.ReadByte();
             item.flags1 = (RegisterItemFlags1)br.ReadByte();
+            item.depth = br.ReadByte();
             return item;
         }
         public bool InitializeSystem(OpenFSDBContext? ctx, String registerFile, bool loadChildrenRegister, bool loadTreeRegister)
@@ -642,7 +650,7 @@ namespace TheBook.Net.Core
             // todo tushar: lineage root head tail etc.
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 node.chapter.parentId, node.DirectorySectionID, 0, 0, 0, 0, 0,
-                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0);
+                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0, 0);
 
             // first add to parent's tree sequence register
             parent = Register.LoadSetupRegisterItem(ctx, ctx.dbNodeTreeRegistryFile, parent.Id, true, false, false, false, true, true);
@@ -1491,6 +1499,7 @@ namespace TheBook.Net.Core
 
             Int64 id = item.Id;
             Int64 sectionId = item.sectionId;
+            Byte depth = item.depth;
 
             // get next
             RegisterItem? tail = item.tree.Last();
@@ -1523,6 +1532,12 @@ namespace TheBook.Net.Core
             item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
             dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
             dstParent.children.Add(item);
+            item = Register.LoadSetupRegisterItem(ctx, file, item.Id, false, false, false, false, true, true);
+            dstParent = Register.LoadSetupRegisterItem(ctx, file, dstParentId, false, false, false, false, true, true);
+
+            // phase 5: reconfigure depth of the tree only if theres a change
+            if (item.depth != depth)
+                item.tree.ReconfigureTreeSequenceDepth();
 
             // final phase 5: move node to destination location physically in db config files
             return entryMethods.DBChangeNodeParentOFSDB(ctx, sectionId, id, dstParentId);
@@ -2155,21 +2170,6 @@ namespace TheBook.Net.Core
 
             return Register.MoveParentProper(ctx, registerFile, item, targetParent.Id);
         }
-        // this method inserts a node in the registry by id
-        public RegisterItem? Add(myNode node, ref RegisterItem? parentNewStateOut)
-        {
-            if (ctx.readOnly) return null;
-            if (node.chapter == null) return null;
-
-            // finally update the register add this node
-            RegisterItem? item = new RegisterItem(0, node.chapter.Id,
-                parent.Id, node.DirectorySectionID, 0, 0, 0, 0, 0,
-                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, RegisterItemFlags1.None, 0, 0, 0);
-            if (Add(item))
-                return item;
-            else
-                return null;
-        }
 
         public bool Add(RegisterItem? item)
         {
@@ -2187,6 +2187,7 @@ namespace TheBook.Net.Core
                 item.parentId = parent.Id;
                 item.previousSiblingId = 0;
                 item.nextSiblingId = 0;
+                item.depth = (byte)(parent.depth + 1);
                 Int64 newItemOffset = Register.InsertNode(ctx, registerFile, item);
                 if (newItemOffset < 0) return false; // critical error abort with error
 
@@ -2208,6 +2209,7 @@ namespace TheBook.Net.Core
                 item.parentId = parent.Id;
                 item.previousSiblingId = head.Id;
                 item.nextSiblingId = 0;
+                item.depth = (byte)(parent.depth + 1);
                 Int64 newItemOffset = Register.InsertNode(ctx, registerFile, item);
                 if (newItemOffset < 0) return false; // critical error abort with error
 
@@ -2232,6 +2234,7 @@ namespace TheBook.Net.Core
                 item.previousSiblingId = tail.Id;
                 item.nextSiblingId = 0;
                 item.parentId = parent.Id;
+                item.depth = (byte)(parent.depth + 1);
                 Int64 newItemOffset = Register.InsertNode(ctx, registerFile, item);
                 if (newItemOffset < 0) return false; // critcial error abort with error
 
@@ -2446,7 +2449,7 @@ namespace TheBook.Net.Core
             // finally update the register add this node
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 parent.Id, node.DirectorySectionID, 0, 0, 0, 0, 0, node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType,
-                RegisterItemFlags1.None, 0, 0, 0);
+                RegisterItemFlags1.None, 0, 0, 0, 0);
             if (Add(item))
                 return item;
             else
@@ -2672,6 +2675,33 @@ namespace TheBook.Net.Core
             return count;
         }
 
+        // we reconfigure depth of all decendants in tree sequence of top ancestor
+        public bool ReconfigureTreeSequenceDepth()
+        {
+            RegisterItem? original = current;
+
+            // there are descendants, iterate through them and find valid nodes
+            current = null;
+            while (true)
+            {
+                // get next item
+                RegisterItem? nextItem = Next();
+                if (nextItem == null) break; // eof break
+
+                // get this item's parent
+                RegisterItem? nextItemParent = null;
+                Register.FindNode(ctx, registerFile, nextItem.parentId, ref nextItemParent);
+                if (nextItemParent == null) break; // some error or bug
+
+                // reconfigure this item
+                nextItem.depth = (byte)(nextItemParent.depth + 1);
+
+                // update all
+                Register.UpdateNode(ctx, registerFile, nextItem, 0, false, 0, false, 0, false);
+            }
+            current = original;
+            return true;
+        }
 
         // we get all decendants in tree sequence of parent
         public bool GetDescendantTreeSequence(ref List<RegisterItem> listOut)
@@ -2704,6 +2734,7 @@ namespace TheBook.Net.Core
             // get and set next of current
             if (current.nextId == 0) return null; // eof return null
             if (current.Id == last.nextId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
+            if (current.depth <= parent.depth) return null; // eof return null
 
             // get next 
             RegisterItem? item = null;
@@ -2711,6 +2742,7 @@ namespace TheBook.Net.Core
             Int64 offset = Register.FindNode(ctx, registerFile, current.nextId, ref item);
             if (offset < 0) return null; // no more nodes or error so break
             if (item.Id == last.nextId) return null; // eof return null, because next found item is outside top ancestor's tree scope.
+            if (item.depth <= parent.depth) return null; // eof return null
             // next found item is inside top ancestor's tree scope so assign it.
             current = item;
             return current;
@@ -2727,6 +2759,7 @@ namespace TheBook.Net.Core
             // get and set previous of current
             if (current.prevId == 0) return null; // eof return null
             if (current.Id == first.prevId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
+            if (current.depth <= parent.depth) return null; // eof return null
 
             // get prev 
             RegisterItem? item = null;
@@ -2735,6 +2768,7 @@ namespace TheBook.Net.Core
             if (offset < 0) return null; // no more nodes or error so break
             // this previous node in tree sequence is descendant, so set and return it
             if (item.Id == first.prevId) return null; // eof return null, because prev found item is outside top ancestor's tree scope.
+            if (item.depth <= parent.depth) return null; // eof return null
             // prev found item is inside top ancestor's tree scope so assign it.
             current = item;
             return current;

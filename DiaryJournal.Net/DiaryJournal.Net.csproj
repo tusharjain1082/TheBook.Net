@@ -10,7 +10,7 @@
 	  <Platforms>AnyCPU;x64;x86</Platforms>
       <NoWarn>CA1416</NoWarn>
   	  <CurrentDateTime>$([System.DateTime]::Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"))</CurrentDateTime>
-  	  <SignAssembly>True</SignAssembly>
+  	  <SignAssembly>False</SignAssembly>
   	  <AssemblyOriginatorKeyFile>d:\TheBook.Net\signature-files(keep private)\TheBook.Net\keypair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
