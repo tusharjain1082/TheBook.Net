@@ -15,6 +15,11 @@ this project is new and i am the original sole developer. there may be bugs and 
 ## security and privacy
 if you require security and privacy, you can keep this application and your writing database and everything in a bitlocker encrypted virtual hard disk or vhd file, or in any bitlocker encrypted drive or device. no further encryption or any other tight or multi-layered encryption is required because it is dangerous and very complicated as it makes everything complicated. so a simple bitlocker is enough for keeping your things private and secure.
 
+## download
+you can download precompiled portable self contained application in releases section. complete source code is also available.
+
 ## your feedback
 I Tushar Jain am the original sole developer and maintainer of TheBook.Net and it's source code. your feedback and rating is more important for this open source application and it's source code to persist, and for others to know and trust this application and it's worthiness. so please give star rating if you find this application to be worthy and eligible.
 
+## screenshots
+![Alt text](/screenshot1.jpeg?raw=false "TheBook.Net screenshot")

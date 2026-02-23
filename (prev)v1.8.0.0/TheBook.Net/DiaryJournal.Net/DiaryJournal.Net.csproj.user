@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+  <ItemGroup>
+    <Compile Update="FormFind.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormJournalDesign2.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormNodeList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormSelectDB.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormSortOptions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormTree.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="FormTreeResetOptions.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Update="PrintRichTextBoxEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Update="StickyNoteForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+  </ItemGroup>
+</Project>
