@@ -5,6 +5,7 @@ using HtmlAgilityPack;
 using MarkupConverter;
 using MigraDoc.DocumentObjectModel.Tables;
 using PdfSharp.Drawing;
+using PdfSharp.Drawing.BarCodes;
 using RtfPipe;
 using RtfPipe.Model;
 using RtfPipe.Tokens;
@@ -4675,6 +4676,80 @@ namespace DiaryJournal.Net
 
             // update form
             reloadPath("", false, currentPathItem);
+        }
+
+        private void testTrashDbOnlyCreateTestNodesToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show(this, "warning: create 300,000+ trash test nodes. this is only meant for trash test database not your official database. do you wish to continue?", "question",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes) return;
+
+
+            if (!dbCtx.isDBOpen()) return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error db write locked.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // firstly save entry
+            __saveEntry();
+
+            List<RegisterItem> tops = new List<RegisterItem>();
+
+            this.Invoke(toggleForm, false);
+
+            // operations status form
+            FormOperation? formOperation = null;
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
+
+
+            // first create top ancestors
+            for (int i = 0; i < 10000; i++)
+            {
+                // now create registry and node
+                myNode node = new myNode();
+                node.chapter.parentId = 0;
+                node.chapter.chapterDateTime = DateTime.Now;
+                node.chapter.nodeType = NodeType.Entry;
+                node.chapter.Title = i.ToString();
+                byte[]? xamlbytes = null;
+                RegisterItem? item = Register.Insert(dbCtx, 0, emptySlotsItem, node, "", xamlbytes, false, false);
+                if (item != null)
+                    tops.Add(item);
+
+                formOperation.updateProgressBar(i, 10000);
+                formOperation.updateFilesStatus(i, 10000);
+            }
+            UInt32 index = 0;
+
+            // now create rest of trees: 300,000 or more garbage nodes
+            for (int i = 0; i < 30; i++)
+            {
+                foreach (RegisterItem? top in tops)
+                {
+                    // now create registry and node
+                    myNode node = new myNode();
+                    node.chapter.parentId = top.Id;
+                    node.chapter.chapterDateTime = DateTime.Now;
+                    node.chapter.nodeType = NodeType.Entry;
+                    node.chapter.Title = index++.ToString();
+                    byte[]? xamlbytes = null;
+                    RegisterItem? item = Register.Insert(dbCtx, top.Id, emptySlotsItem, node, "", xamlbytes, false, false);
+
+                    formOperation.updateProgressBar(index, (10000 * 30));
+                    formOperation.updateFilesStatus(index, (10000 * 30));
+
+                }
+            }
+
+            // finally commit all config
+            dbCtx.writeUsedSlotsFile();
+            DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
+
+            this.Invoke(toggleForm, true);
+            formOperation.close();
+
         }
     }
 }

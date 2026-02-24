@@ -275,6 +275,8 @@
             toolStripMenuItem46 = new ToolStripMenuItem();
             toolStripMenuItem47 = new ToolStripMenuItem();
             toolStripMenuItem48 = new ToolStripMenuItem();
+            toolStripSeparator25 = new ToolStripSeparator();
+            toolStripMenuItem55 = new ToolStripMenuItem();
             toolStripSeparator8 = new ToolStripSeparator();
             toolStripMenuItem7 = new ToolStripMenuItem();
             toolStripMenuItem8 = new ToolStripMenuItem();
@@ -457,6 +459,7 @@
             toolStripSeparator83 = new ToolStripSeparator();
             toolStripMenuItem2 = new ToolStripMenuItem();
             toolStripSeparator85 = new ToolStripSeparator();
+            testTrashDbOnlyCreateTestNodesToolStripMenuItem = new ToolStripMenuItem();
             helpToolStripMenuItem = new ToolStripMenuItem();
             aboutToolStripMenuItem = new ToolStripMenuItem();
             txtDBFile = new ToolStripTextBox();
@@ -471,8 +474,6 @@
             pdRtbEntry = new System.Drawing.Printing.PrintDocument();
             ppDlgRtbEntry = new PrintPreviewDialog();
             timerSetRtbEntry = new System.Windows.Forms.Timer(components);
-            toolStripSeparator25 = new ToolStripSeparator();
-            toolStripMenuItem55 = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainerH).BeginInit();
             splitContainerH.Panel1.SuspendLayout();
             splitContainerH.Panel2.SuspendLayout();
@@ -2705,6 +2706,18 @@
             toolStripMenuItem48.Text = "import open filesystem db set  (todo not implemented yet)";
             toolStripMenuItem48.Click += toolStripMenuItem48_Click;
             // 
+            // toolStripSeparator25
+            // 
+            toolStripSeparator25.Name = "toolStripSeparator25";
+            toolStripSeparator25.Size = new Size(497, 6);
+            // 
+            // toolStripMenuItem55
+            // 
+            toolStripMenuItem55.Name = "toolStripMenuItem55";
+            toolStripMenuItem55.Size = new Size(500, 22);
+            toolStripMenuItem55.Text = "import external documents...";
+            toolStripMenuItem55.Click += toolStripMenuItem55_Click;
+            // 
             // toolStripSeparator8
             // 
             toolStripSeparator8.Name = "toolStripSeparator8";
@@ -3835,7 +3848,7 @@
             // 
             // toolStripMenuItem21
             // 
-            toolStripMenuItem21.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItem56, toolStripMenuItem85, toolStripSeparator54, copyDbToLocationToolStripMenuItem, toolStripMenuItem19, toolStripMenuItem31, toolStripMenuItem51, toolStripMenuItem36, toolStripMenuItem50, toolStripSeparator83, toolStripMenuItem2, toolStripSeparator85 });
+            toolStripMenuItem21.DropDownItems.AddRange(new ToolStripItem[] { toolStripMenuItem56, toolStripMenuItem85, toolStripSeparator54, copyDbToLocationToolStripMenuItem, toolStripMenuItem19, toolStripMenuItem31, toolStripMenuItem51, toolStripMenuItem36, toolStripMenuItem50, toolStripSeparator83, toolStripMenuItem2, toolStripSeparator85, testTrashDbOnlyCreateTestNodesToolStripMenuItem });
             toolStripMenuItem21.Name = "toolStripMenuItem21";
             toolStripMenuItem21.Size = new Size(34, 23);
             toolStripMenuItem21.Text = "&DB";
@@ -3917,6 +3930,13 @@
             // 
             toolStripSeparator85.Name = "toolStripSeparator85";
             toolStripSeparator85.Size = new Size(317, 6);
+            // 
+            // testTrashDbOnlyCreateTestNodesToolStripMenuItem
+            // 
+            testTrashDbOnlyCreateTestNodesToolStripMenuItem.Name = "testTrashDbOnlyCreateTestNodesToolStripMenuItem";
+            testTrashDbOnlyCreateTestNodesToolStripMenuItem.Size = new Size(320, 22);
+            testTrashDbOnlyCreateTestNodesToolStripMenuItem.Text = "(test trash db only) create test nodes...";
+            testTrashDbOnlyCreateTestNodesToolStripMenuItem.Click += testTrashDbOnlyCreateTestNodesToolStripMenuItem_Click;
             // 
             // helpToolStripMenuItem
             // 
@@ -4001,18 +4021,6 @@
             // 
             timerSetRtbEntry.Interval = 10;
             timerSetRtbEntry.Tick += timerSetRtbEntry_Tick;
-            // 
-            // toolStripSeparator25
-            // 
-            toolStripSeparator25.Name = "toolStripSeparator25";
-            toolStripSeparator25.Size = new Size(497, 6);
-            // 
-            // toolStripMenuItem55
-            // 
-            toolStripMenuItem55.Name = "toolStripMenuItem55";
-            toolStripMenuItem55.Size = new Size(500, 22);
-            toolStripMenuItem55.Text = "import external documents...";
-            toolStripMenuItem55.Click += toolStripMenuItem55_Click;
             // 
             // FormJournalDesign2
             // 
@@ -4564,5 +4572,6 @@
         private ToolStripMenuItem toolStripMenuItem9;
         private ToolStripSeparator toolStripSeparator25;
         private ToolStripMenuItem toolStripMenuItem55;
+        private ToolStripMenuItem testTrashDbOnlyCreateTestNodesToolStripMenuItem;
     }
 }

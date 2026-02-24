@@ -114,7 +114,7 @@ namespace TheBook.Net.Core
         public Int64 position = 0;
 
         // 10 UInt32, 4 bytes, 1 16 bit uint
-        public const int blockSize = ((sizeof(UInt32) * 10) + 3);
+        public const int blockSize = ((sizeof(UInt32) * 9) + 3);
         // id is not stored, it is calculated dynamically
         public UInt32 Id = 0;
 
@@ -126,7 +126,6 @@ namespace TheBook.Net.Core
         public UInt32 nextSiblingId = 0;
         public UInt32 previousSiblingId = 0;
         public UInt32 childrenCount = 0;
-        public UInt32 usedSlots = 0;
         public UInt32 nextId = 0;
         public UInt32 prevId = 0;
 
@@ -151,7 +150,7 @@ namespace TheBook.Net.Core
         public RegisterItem(Int64 position, UInt32 id, UInt32 parentid, UInt32 sectionid, UInt32 childrenCount,
             UInt32 headId, UInt32 tailId, UInt32 nextSiblingId, UInt32 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType, 
-            UInt32 usedSlots, UInt32 nextId, UInt32 prevId)
+            UInt32 nextId, UInt32 prevId)
         {
             this.position = position;
             this.Id = id;
@@ -162,7 +161,6 @@ namespace TheBook.Net.Core
             this.nextSiblingId = nextSiblingId;
             this.previousSiblingId = previousSiblingId;
             this.childrenCount = childrenCount;
-            this.usedSlots = usedSlots;
             this.nextId = nextId;
             this.prevId = prevId;
             this.nodeType = nodeType;
@@ -181,7 +179,6 @@ namespace TheBook.Net.Core
             this.nextSiblingId = item.nextSiblingId;
             this.previousSiblingId = item.previousSiblingId;
             this.childrenCount = item.childrenCount;
-            this.usedSlots = item.usedSlots;
             this.nextId = item.nextId;
             this.prevId = item.prevId;
 
@@ -246,7 +243,6 @@ namespace TheBook.Net.Core
             bw.Write((UInt32)0);
             bw.Write((UInt32)0);
             bw.Write((UInt32)0);
-            bw.Write((Int32)0);
             bw.Write((byte)node.chapter.nodeType);
             bw.Write((byte)node.chapter.specialNodeType);
             bw.Write((byte)node.chapter.domainType);
@@ -255,7 +251,7 @@ namespace TheBook.Net.Core
         public static byte[] convertToBytes(UInt32 id, UInt32 parentId, UInt32 sectionId, UInt32 childrenCount,
             UInt32 headId, UInt32 tailId, UInt32 nextSiblingId, UInt32 previousSiblingId, NodeType nodeType,
             SpecialNodeType specialNodeType, DomainType domainType,
-            UInt32 usedSlots, UInt32 nextId, UInt32 prevId)
+            UInt32 nextId, UInt32 prevId)
         {
             MemoryStream ms = new MemoryStream();
             BinaryWriter bw = new BinaryWriter(ms);
@@ -266,7 +262,6 @@ namespace TheBook.Net.Core
             bw.Write(nextSiblingId);
             bw.Write(previousSiblingId);
             bw.Write(childrenCount);
-            bw.Write(usedSlots);
             bw.Write(nextId);
             bw.Write(prevId);
             bw.Write((byte)nodeType);
@@ -285,7 +280,6 @@ namespace TheBook.Net.Core
             bw.Write(item.nextSiblingId);
             bw.Write(item.previousSiblingId);
             bw.Write(item.childrenCount);
-            bw.Write(item.usedSlots);
             bw.Write(item.nextId);
             bw.Write(item.prevId);
             bw.Write((byte)item.nodeType);
@@ -316,7 +310,6 @@ namespace TheBook.Net.Core
             item.nextSiblingId = br.ReadUInt32();
             item.previousSiblingId = br.ReadUInt32();
             item.childrenCount = br.ReadUInt32();
-            item.usedSlots = br.ReadUInt32();
             item.nextId = br.ReadUInt32();
             item.prevId = br.ReadUInt32();
             item.nodeType = (NodeType)br.ReadByte();
@@ -347,7 +340,6 @@ namespace TheBook.Net.Core
             item.nextSiblingId = br.ReadUInt32();
             item.previousSiblingId = br.ReadUInt32();
             item.childrenCount = br.ReadUInt32();
-            item.usedSlots = br.ReadUInt32();
             item.nextId = br.ReadUInt32();
             item.prevId = br.ReadUInt32();
             item.nodeType = (NodeType)br.ReadByte();
@@ -506,7 +498,7 @@ namespace TheBook.Net.Core
             // return the first empty slot in chain of the system node
             RegisterItem? found = emptySlots.children.First();
             if (found == null) return null;
-            if (deleteEmptySlot) emptySlots.children.Delete(found, ref emptySlots, true, true);
+            if (deleteEmptySlot) emptySlots.children.Delete(found, ref emptySlots, true, true, false);
             return found;
         }
         // this method deletes the empty slot by id in parent node
@@ -519,7 +511,7 @@ namespace TheBook.Net.Core
             emptySlots = LoadSetupRegisterItem(ctx, emptySlots.Id, false, false, false, false, true, true);
             if (item == null) return false;
 
-            return emptySlots.children.Delete(item, ref emptySlots, true, true);
+            return emptySlots.children.Delete(item, ref emptySlots, true, true, false);
         }
 
         public static bool IsDescendantOfAncestor(OpenFSDBContext? ctx, RegisterItem? item, RegisterItem? ancestor)
@@ -580,7 +572,8 @@ namespace TheBook.Net.Core
         }
         // this method inserts a node in the registry and writes the node files in db path
         public static RegisterItem? Insert(OpenFSDBContext? ctx, UInt32 parentId,
-            RegisterItem? emptySlotsItem, myNode? node, String? rtf, byte[]? xamlbytes)
+            RegisterItem? emptySlotsItem, myNode? node, String? rtf, byte[]? xamlbytes,
+            bool commitUsedSlots = true, bool commitDBConfig = true)
         {
             if (ctx.readOnly) return null;
 
@@ -589,8 +582,8 @@ namespace TheBook.Net.Core
             if (parent == null) return null;
 
             // validations
-            if (parent.childrenCount >= Register.default_maxChildrenNodes)
-                return null;
+            //if (parent.childrenCount >= Register.default_maxChildrenNodes)
+            //    return null;
 
             // 2nd setup item
             node.chapter.parentId = parent.Id;
@@ -629,7 +622,7 @@ namespace TheBook.Net.Core
             // todo tushar: lineage root head tail etc.
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 node.chapter.parentId, node.DirectorySectionID, 0, 0, 0, 0, 0,
-                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, 0, 0, 0);
+                node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType, 0, 0);
 
             // first add to parent's tree sequence register
             parent = Register.LoadSetupRegisterItem(ctx, parent.Id, true, false, false, false, true, true);
@@ -641,18 +634,16 @@ namespace TheBook.Net.Core
             if (!parent.children.Add(item))
                 return null;
 
-            // change in root
-            RegisterItem? root = Register.LoadSetupRegisterItem(ctx, 0, false, false, false, false, true, true);
-            root.usedSlots += 1;
-            Register.UpdateNode(ctx, root, 0, false, 0, false, 0, false);
-            root = Register.LoadSetupRegisterItem(ctx, 0, false, false, false, false, true, true);
+            // update used slots config
+            ctx.usedSlots += 1;
+            if (commitUsedSlots) ctx.writeUsedSlotsFile();
 
             item = Register.LoadSetupRegisterItem(ctx, item.Id, false, false, false, false, true, true);
             item.node = node;
             if (item != null)
             {
                 ctx.dbConfig.latestCreatedEntry = item.Id;
-                DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, ctx.dbConfigFile);
+                if (commitDBConfig) DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, ctx.dbConfigFile);
             }
             return item;
         }
@@ -1115,9 +1106,7 @@ namespace TheBook.Net.Core
         // returns the total number of entries which validly exist in all root ancestors
         public static UInt32 Total(OpenFSDBContext? ctx)
         {
-            // first get the latest state of root register by id
-            RegisterItem? root = LoadSetupRegisterItem(ctx, 0, false, false, false, false, false, false);
-            return root.usedSlots;
+            return ctx.usedSlots;
         }
         // we get system nodes
         public static bool FindSystemNodeRegisterItem(OpenFSDBContext? ctx, RegisterItem? parent, NodeType type, ref RegisterItem? itemOut)
@@ -1858,7 +1847,7 @@ namespace TheBook.Net.Core
         */
 
         // this method deletes the node from parent's register and adds it to unused slots register if required
-        public bool Delete(RegisterItem item, ref RegisterItem? emptySlotsItem, bool withoutEmptySlotsRegister, bool isEmptySlot)
+        public bool Delete(RegisterItem item, ref RegisterItem? emptySlotsItem, bool withoutEmptySlotsRegister, bool isEmptySlot, bool commitUsedSlots)
         {
             /* first reload parent current config
              * if item's offset is head then this is first node
@@ -1916,9 +1905,9 @@ namespace TheBook.Net.Core
             // phase 4 - change in root
             if (!isEmptySlot)
             {
-                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, 0, false, false, false, false, true, true);
-                root.usedSlots -= 1;
-                Register.UpdateNode(ctx, root, 0, false, 0, false, 0, false);
+                // update used slots config
+                ctx.usedSlots -= 1;
+                if (commitUsedSlots) ctx.writeUsedSlotsFile();
 
                 // final phase 5 - delete node's files
                 return entryMethods.DBPurgeNodeOFSDB(ctx, id, sectionId, true, true);
@@ -2332,7 +2321,7 @@ namespace TheBook.Net.Core
             // finally update the register add this node
             RegisterItem? item = new RegisterItem(0, node.chapter.Id,
                 parent.Id, node.DirectorySectionID, 0, 0, 0, 0, 0, node.chapter.nodeType, node.chapter.specialNodeType, node.chapter.domainType,
-                0, 0, 0);
+                0, 0);
             if (Add(item))
                 return item;
             else
@@ -2502,7 +2491,7 @@ namespace TheBook.Net.Core
                 RegisterItem? parentInLine = Register.LoadSetupRegisterItem(ctx, prev.parentId, false, false, false, false, true, true);
 
                 // delete item from parent proper
-                parentInLine.children.Delete(prev, ref emptySlots, false, false);
+                parentInLine.children.Delete(prev, ref emptySlots, false, false, false);
             }
 
             // finally delete the top item
@@ -2510,7 +2499,10 @@ namespace TheBook.Net.Core
             RegisterItem? itemparent = Register.LoadSetupRegisterItem(ctx, item.parentId, false, false, false, false, true, true);
 
             // delete item from parent proper
-            itemparent.children.Delete(item, ref emptySlots, false, false);
+            itemparent.children.Delete(item, ref emptySlots, false, false, false);
+
+            // finally commit updated config
+            ctx.writeUsedSlotsFile();
 
             current = original;
             return true;

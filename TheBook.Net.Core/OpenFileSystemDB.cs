@@ -45,6 +45,7 @@ namespace DiaryJournal.Net
         public String dbEntryConfigPath = "";
         public String dbName = "";
         public String dbConfigFile = "";
+        public String dbUsedSlotsFile = "";
         public String dbNodeTreeRegistryFile = "";
         public String dbBackupPath = "";
         public String dbTmpPath = "";
@@ -62,6 +63,58 @@ namespace DiaryJournal.Net
         public System.IO.MemoryMappedFiles.MemoryMappedViewStream? regFileStream = null;
         public Int64 regFileSize = 0;
 
+        // used slots config
+        public UInt32 usedSlots = 0;
+        //public FileStream? usedSlotsFS = null;
+        //public StreamReader? usedSlotsReader = null;
+        //public StreamWriter? usedSlotsWriter = null;
+
+        public bool readUsedSlotsFile()
+        {
+            if (!File.Exists(this.dbUsedSlotsFile)) return false;
+            String v = File.ReadAllText(this.dbUsedSlotsFile);
+            this.usedSlots = UInt32.Parse(v);
+            return true;
+        }
+
+        public bool writeUsedSlotsFile()
+        {
+            String v = this.usedSlots.ToString();
+            try
+            {
+                File.WriteAllText(this.dbUsedSlotsFile, v);
+            }
+            catch
+            {
+                return false;
+            }
+            return true;
+        }
+
+        /*
+        public bool readUsedSlotsFile()
+        {
+            if (usedSlotsFS == null) return false;
+            usedSlotsFS.Position = 0;
+            String body = usedSlotsReader.ReadToEnd();
+            this.usedSlots = UInt32.Parse(body);
+            return true;
+        }
+
+        public bool writeUsedSlotsFile(bool flush)
+        {
+            if (usedSlotsFS == null) return false;
+            usedSlotsFS.Position = 0;
+            usedSlotsFS.SetLength(0);
+            usedSlotsWriter.Write(usedSlots.ToString());
+            if (flush)
+            {
+                usedSlotsWriter.Flush();
+                usedSlotsFS.Flush();
+            }
+            return true;
+        }
+        */
         public bool RecreateRegistryFile()
         {
             // first close
@@ -150,6 +203,7 @@ namespace DiaryJournal.Net
         public static String defaultDBTmpDirName = "tmp";
         public static String defaultDBBackupDirName = "backup";
         public const string configFileName = "OpenFSDBConfig.xml";
+        public const string usedSlotsFileName = "usedSlots.cfg";
         public const string nodeTreeRegistryFileName = "node-tree-registry.bin";
 
         // this method creates register file and root node in it
@@ -191,10 +245,14 @@ namespace DiaryJournal.Net
             // finally update the register add this node
             RegisterItem? rootItem = new RegisterItem(0, root.chapter.Id,
             root.chapter.parentId, root.DirectorySectionID, 0, 0, 0, 0, 0, root.chapter.nodeType, root.chapter.specialNodeType, root.chapter.domainType,
-            0, 0, 0);
+            0, 0);
 
             if (Register.InsertNode(ctx, rootItem) < 0)
                 return false; // critical error
+
+            // update used slots config
+            ctx.usedSlots += 1;
+            ctx.writeUsedSlotsFile();
 
             // done
             return true;
@@ -212,6 +270,7 @@ namespace DiaryJournal.Net
             String dbEntryCfgPath = Path.Combine(dbBasePath, defaultDBEntryCfgDirName);
             String dbTmpPath = Path.Combine(dbBasePath, defaultDBTmpDirName);
             String dbBackupPath = Path.Combine(dbBasePath, defaultDBBackupDirName);
+            String dbUsedSlotsFile = Path.Combine(dbBasePath, usedSlotsFileName);
 
             // first delete old paths
             if (Directory.Exists(dbBasePath))
@@ -243,6 +302,7 @@ namespace DiaryJournal.Net
             ctx.dbBackupPath = dbBackupPath;
             ctx.dbTmpPath = dbTmpPath;
             ctx.dbConfigFile = dbConfigFile;
+            ctx.dbUsedSlotsFile = dbUsedSlotsFile;
             ctx.dbNodeTreeRegistryFile = dbNodeTreeRegistryFile;
             ctx.dbLoaded = true; // set marker db is loaded
             ctx.dbName = ctx.dbConfig.setName;
@@ -256,6 +316,10 @@ namespace DiaryJournal.Net
             ctx.dbSections = new OpenFSDBSections(ctx.dbBaseParentPath, ctx.dbBasePath, ctx.dbEntryPath, ctx.dbEntryConfigPath);
             // auto load or create sections
             OpenFSDBSections.loadReloadSections(ctx);
+
+            // create new used slots file
+            ctx.usedSlots = 0;
+            ctx.writeUsedSlotsFile();
 
             // finally create register and 1st node which is root node
             DBCreateRegister(ctx, true);
@@ -289,6 +353,7 @@ namespace DiaryJournal.Net
             String dbEntryCfgPath = Path.Combine(dbBasePath, defaultDBEntryCfgDirName);
             String dbTmpPath = Path.Combine(dbBasePath, defaultDBTmpDirName);
             String dbBackupPath = Path.Combine(dbBasePath, defaultDBBackupDirName);
+            String dbUsedSlotsFile = Path.Combine(dbBasePath, usedSlotsFileName);
 
             // first delete old paths
             if (Directory.Exists(dbBasePath))
@@ -335,11 +400,16 @@ namespace DiaryJournal.Net
             ctx.dbLoaded = true; // set marker db is loaded
             ctx.dbName = ctx.dbConfig.setName;
             ctx.dbEntryType = src.dbEntryType;
+            ctx.dbUsedSlotsFile = dbUsedSlotsFile;
 
             // init sections class
             ctx.dbSections = new OpenFSDBSections(ctx.dbBaseParentPath, ctx.dbBasePath, ctx.dbEntryPath, ctx.dbEntryConfigPath);
             // create all sections
             OpenFSDBSections.createSections(ctx, 1, (UInt32)src.dbSections.sections.Count);
+
+            // create new clone used slots file in clone db
+            ctx.usedSlots = src.usedSlots;
+            ctx.writeUsedSlotsFile();
 
             GC.Collect();
             return ctx;
@@ -357,6 +427,7 @@ namespace DiaryJournal.Net
             String dbEntryCfgPath = Path.Combine(dbBasePath, defaultDBEntryCfgDirName);
             String dbTmpPath = Path.Combine(dbBasePath, defaultDBTmpDirName);
             String dbBackupPath = Path.Combine(dbBasePath, defaultDBBackupDirName);
+            String dbUsedSlotsFile = Path.Combine(dbBasePath, usedSlotsFileName);
 
             // load db config from db base path
             if (!DatabaseConfig.fromXml(ctx.dbConfig, dbConfigFile)) return false;
@@ -386,11 +457,15 @@ namespace DiaryJournal.Net
             ctx.dbLoaded = true; // set marker db is loaded
             ctx.dbName = ctx.dbConfig.setName;
             ctx.readOnly = readOnly;
+            ctx.dbUsedSlotsFile = dbUsedSlotsFile;
 
             // init sections class
             ctx.dbSections = new OpenFSDBSections(ctx.dbBaseParentPath, ctx.dbBasePath, ctx.dbEntryPath, ctx.dbEntryConfigPath);
             // auto load or create sections
             OpenFSDBSections.loadReloadSections(ctx);
+
+            // scan used slots config
+            ctx.readUsedSlotsFile();
 
             // finally create register and root node
             DBCreateRegister(ctx, false);

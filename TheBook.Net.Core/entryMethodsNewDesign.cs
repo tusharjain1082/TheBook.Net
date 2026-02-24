@@ -293,11 +293,9 @@ namespace TheBook.Net.Core
                 // reload and setup
                 emptySlots = Register.LoadSetupRegisterItem(ctx, item.Id, true, false, false, false, true, true);
 
-                // change in root
-                root = Register.LoadSetupRegisterItem(ctx, 0, true, false, false, false, true, true);
-                root.usedSlots += 1;
-                Register.UpdateNode(ctx, root, 0, false, 0, false, 0, false);
-                root = Register.LoadSetupRegisterItem(ctx, 0, true, false, false, false, true, true);
+                // update used slots config
+                ctx.usedSlots += 1;
+                ctx.writeUsedSlotsFile();
 
                 if (emptySlots == null) return false;
             }
@@ -500,10 +498,9 @@ namespace TheBook.Net.Core
                 // 2nd add to children's register
                 if (!parent.children.Add(item)) return false; // critical error abort operations
 
-                // change in root
-                RegisterItem? root = Register.LoadSetupRegisterItem(ctx, 0, false, false, false, false, true, true);
-                root.usedSlots += 1;
-                Register.UpdateNode(ctx, root, 0, false, 0, false, 0, false);
+                // update used slots config
+                ctx.usedSlots += 1;
+                ctx.writeUsedSlotsFile();
 
                 index += 1;
             }
@@ -546,10 +543,9 @@ namespace TheBook.Net.Core
                     // 2nd add to children's register
                     if (!parent.children.Add(item)) return false; // critical error abort operations
 
-                    // change in root
-                    RegisterItem? root = Register.LoadSetupRegisterItem(ctx, 0, false, false, false, false, true, true);
-                    root.usedSlots += 1;
-                    Register.UpdateNode(ctx, root, 0, false, 0, false, 0, false);
+                    // update used slots config
+                    ctx.usedSlots += 1;
+                    ctx.writeUsedSlotsFile();
 
                     // update                
                     index += 1;

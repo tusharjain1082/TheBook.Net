@@ -169,6 +169,8 @@ namespace TheBook.Net
             txtBoxDBPath.Text = "";
             if (dbCtx != null)
             {
+                dbCtx.writeUsedSlotsFile();
+                DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
                 dbCtx.close();
                 dbCtx = null;
             }
@@ -213,6 +215,10 @@ namespace TheBook.Net
                 return;
 
             // now reconfigure
+
+            // create new used slots file
+            dbCtx.usedSlots = 0;
+            dbCtx.writeUsedSlotsFile();
 
             // create register and 1st node which is root node
             FormOperation? formOperation = null;
