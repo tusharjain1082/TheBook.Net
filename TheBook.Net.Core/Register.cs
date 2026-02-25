@@ -643,7 +643,7 @@ namespace TheBook.Net.Core
             if (item != null)
             {
                 ctx.dbConfig.latestCreatedEntry = item.Id;
-                if (commitDBConfig) DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, ctx.dbConfigFile);
+                if (commitDBConfig) DatabaseConfig.toYamlFile(ctx.dbConfig, ctx.dbConfigFile);
             }
             return item;
         }

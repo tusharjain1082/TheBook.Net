@@ -170,7 +170,7 @@ namespace TheBook.Net
             if (dbCtx != null)
             {
                 dbCtx.writeUsedSlotsFile();
-                DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
+                DatabaseConfig.toYamlFile(dbCtx.dbConfig, dbCtx.dbConfigFile);
                 dbCtx.close();
                 dbCtx = null;
             }

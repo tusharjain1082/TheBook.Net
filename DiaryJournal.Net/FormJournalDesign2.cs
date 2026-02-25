@@ -1146,7 +1146,7 @@ namespace DiaryJournal.Net
 
             // update db config
             dbCtx.dbConfig.lastModifiedEntry = currentPathItem.Id;
-            DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
+            DatabaseConfig.toYamlFile(dbCtx.dbConfig, dbCtx.dbConfigFile);
 
             stateChanged = false;
             tsslblStateChanged.Text = " ";
@@ -3575,7 +3575,7 @@ namespace DiaryJournal.Net
 
             // update db config file
             dbCtx.dbConfig.latestCreatedEntry = cloneItem.Id;
-            DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
+            DatabaseConfig.toYamlFile(dbCtx.dbConfig, dbCtx.dbConfigFile);
 
             // update form
             reloadPath("", false, currentPathItem);
@@ -4745,7 +4745,7 @@ namespace DiaryJournal.Net
 
             // finally commit all config
             dbCtx.writeUsedSlotsFile();
-            DatabaseConfig.toXmlFile(dbCtx, dbCtx.dbConfig, dbCtx.dbConfigFile);
+            DatabaseConfig.toYamlFile(dbCtx.dbConfig, dbCtx.dbConfigFile);
 
             this.Invoke(toggleForm, true);
             formOperation.close();

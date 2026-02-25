@@ -60,6 +60,7 @@
     <ProjectReference Include="..\SharpConfig\SharpConfig.csproj" />
     <ProjectReference Include="..\TheArtOfDev.HtmlRenderer.PdfSharp\TheArtOfDev.HtmlRenderer.PdfSharp.csproj" />
     <ProjectReference Include="..\TheArtOfDev.HtmlRenderer\TheArtOfDev.HtmlRenderer.csproj" />
+    <ProjectReference Include="..\YamlDotNet\YamlDotNet.csproj" />
   </ItemGroup>
 
   <ItemGroup>

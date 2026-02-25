@@ -21,7 +21,6 @@
  * 
  */
 
-using Microsoft.Win32;
 using RtfPipe;
 using System;
 using System.IO;
@@ -49,7 +48,7 @@ namespace DiaryJournal.Net
         public String dbNodeTreeRegistryFile = "";
         public String dbBackupPath = "";
         public String dbTmpPath = "";
-        public DatabaseConfig dbConfig = new DatabaseConfig();
+        public DatabaseConfig? dbConfig = new DatabaseConfig();
         public EntryType dbEntryType = EntryType.Rtf;
         public EntryType dbEntryConfigType = EntryType.Cfg;
         public Register dbNodesTreeRegistry = new Register();
@@ -202,7 +201,8 @@ namespace DiaryJournal.Net
         public static String defaultDBEntryCfgDirName = "EntryConfig";
         public static String defaultDBTmpDirName = "tmp";
         public static String defaultDBBackupDirName = "backup";
-        public const string configFileName = "OpenFSDBConfig.xml";
+        //public const string XmlconfigFileName = "OpenFSDBConfig.xml";
+        public const string configFileName = "OpenFSDBConfig.yaml";
         public const string usedSlotsFileName = "usedSlots.cfg";
         public const string nodeTreeRegistryFileName = "node-tree-registry.bin";
 
@@ -307,7 +307,7 @@ namespace DiaryJournal.Net
             ctx.dbLoaded = true; // set marker db is loaded
             ctx.dbName = ctx.dbConfig.setName;
 
-            DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, dbConfigFile);
+            DatabaseConfig.toYamlFile(ctx.dbConfig, dbConfigFile);
 
             // initialize and write brand new db nodes tree registry file. if it exists, load it.
             ctx.dbNodesTreeRegistry = new Register();
@@ -373,7 +373,7 @@ namespace DiaryJournal.Net
             ctx.dbConfig.setID = Guid.NewGuid();
             ctx.dbConfig.lastModifiedEntry = src.dbConfig.lastModifiedEntry;
             ctx.dbConfig.latestCreatedEntry = src.dbConfig.latestCreatedEntry;
-            DatabaseConfig.toXmlFile(ctx, ctx.dbConfig, dbConfigFile);
+            DatabaseConfig.toYamlFile(ctx.dbConfig, dbConfigFile);
 
             // directly copy register
             String dbNodeTreeRegistryFile = Path.Combine(dbBasePath, nodeTreeRegistryFileName);
@@ -423,6 +423,7 @@ namespace DiaryJournal.Net
 
             // prepare formatted paths set
             String dbConfigFile = Path.Combine(dbBasePath, configFileName);
+            //String dbXmlConfigFile = Path.Combine(dbBasePath, XmlconfigFileName);
             String dbEntryPath = Path.Combine(dbBasePath, defaultDBEntryDirName);
             String dbEntryCfgPath = Path.Combine(dbBasePath, defaultDBEntryCfgDirName);
             String dbTmpPath = Path.Combine(dbBasePath, defaultDBTmpDirName);
@@ -430,7 +431,8 @@ namespace DiaryJournal.Net
             String dbUsedSlotsFile = Path.Combine(dbBasePath, usedSlotsFileName);
 
             // load db config from db base path
-            if (!DatabaseConfig.fromXml(ctx.dbConfig, dbConfigFile)) return false;
+            //DatabaseConfig.fromXml(ctx.dbConfig, dbXmlConfigFile);
+            ctx.dbConfig = DatabaseConfig.fromYamlFile(dbConfigFile);
 
             // load db name
             String dbName = ctx.dbConfig.setName;
@@ -600,12 +602,12 @@ namespace DiaryJournal.Net
         //**********************************************************************
         
         // write appropirate db config file in vhd file or in local windows file system.
-        public static String writeDBConfig(OpenFSDBContext? ctx)
+        public static String? writeDBConfig(OpenFSDBContext? ctx)
         {
-            String result = "";
+            String? result = "";
             if (ctx.readOnly) return "";
             // local windows file system
-            result = DatabaseConfig.toXmlFile(ctx.dbConfig, ctx.dbConfigFile);
+            result = DatabaseConfig.toYamlFile(ctx.dbConfig, ctx.dbConfigFile);
             return result;
         }
 
