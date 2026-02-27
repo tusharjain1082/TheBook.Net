@@ -57,7 +57,6 @@
     <ProjectReference Include="..\PdfSharp\PDFsharp.csproj" />
     <ProjectReference Include="..\RtfPipe\RtfPipe.csproj" />
     <ProjectReference Include="..\RtfWriter\RtfWriter.csproj" />
-    <ProjectReference Include="..\SharpConfig\SharpConfig.csproj" />
     <ProjectReference Include="..\TheArtOfDev.HtmlRenderer.PdfSharp\TheArtOfDev.HtmlRenderer.PdfSharp.csproj" />
     <ProjectReference Include="..\TheArtOfDev.HtmlRenderer\TheArtOfDev.HtmlRenderer.csproj" />
     <ProjectReference Include="..\YamlDotNet\YamlDotNet.csproj" />

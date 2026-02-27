@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.3.11206.111
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SharpConfig", "SharpConfig\SharpConfig.csproj", "{A5865F13-8CFD-4FE2-A875-E5237095B0D5}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AngleSharp.Core", "AngleSharp.Core\AngleSharp.Core\AngleSharp.Core.csproj", "{8F764824-5D9C-4EDE-8059-751E15602DC1}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HtmlAgilityPack", "HtmlAgilityPack\HtmlAgilityPack.csproj", "{92B774EC-0B25-4397-B186-AE4E407440A7}"
@@ -58,24 +56,6 @@ Global
 		Release-NoDebugSymbols|x86 = Release-NoDebugSymbols|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|x64.Build.0 = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Debug|x86.Build.0 = Debug|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|x64.ActiveCfg = Release|x64
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|x64.Build.0 = Release|x64
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|x86.ActiveCfg = Release|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release|x86.Build.0 = Release|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|Any CPU.ActiveCfg = Release-NoDebugSymbols|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|Any CPU.Build.0 = Release-NoDebugSymbols|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|x64.ActiveCfg = Release-NoDebugSymbols|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|x64.Build.0 = Release-NoDebugSymbols|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|x86.ActiveCfg = Release-NoDebugSymbols|Any CPU
-		{A5865F13-8CFD-4FE2-A875-E5237095B0D5}.Release-NoDebugSymbols|x86.Build.0 = Release-NoDebugSymbols|Any CPU
 		{8F764824-5D9C-4EDE-8059-751E15602DC1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8F764824-5D9C-4EDE-8059-751E15602DC1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F764824-5D9C-4EDE-8059-751E15602DC1}.Debug|x64.ActiveCfg = Debug|Any CPU

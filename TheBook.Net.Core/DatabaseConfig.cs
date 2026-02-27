@@ -5,7 +5,6 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
 using TheBook.Net.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -18,16 +17,6 @@ namespace DiaryJournal.Net
         public String setName { get; set; } = "";
         public DateTime setDateTime { get; set; }
         public Guid setID { get; set; } = Guid.Empty;
-
-        /*
-        public const string configTagName = "config";
-        public const string setNameTagName = "setName";
-        public const string setDateTimeTagName = "setDateTime";
-        public const string setIDTagName = "setID";
-        public const string productVersionTagName = "productVersion";
-        public const string lastModifiedEntryTagName = "lastModifiedEntry";
-        public const string latestCreatedEntryTagName = "latestCreatedEntry";
-        */
 
         public UInt32 lastModifiedEntry { get; set; } = 0;
         public UInt32 latestCreatedEntry { get; set; } = 0;

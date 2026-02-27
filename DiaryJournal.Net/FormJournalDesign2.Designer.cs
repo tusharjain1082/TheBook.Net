@@ -211,7 +211,6 @@
             radCfgLMNode = new RadioButton();
             label3 = new Label();
             cmbCfgRtbViewEntryRM = new ComboBox();
-            chkCfgAutoLoadCreateDefaultDB = new CheckBox();
             buttonApplyConfig1 = new Button();
             tabPageViewEntry = new TabPage();
             rtbViewEntry = new RichTextBox();
@@ -2195,7 +2194,6 @@
             tabPageConfig1.Controls.Add(groupBox10);
             tabPageConfig1.Controls.Add(label3);
             tabPageConfig1.Controls.Add(cmbCfgRtbViewEntryRM);
-            tabPageConfig1.Controls.Add(chkCfgAutoLoadCreateDefaultDB);
             tabPageConfig1.Controls.Add(buttonApplyConfig1);
             tabPageConfig1.Location = new Point(4, 29);
             tabPageConfig1.Name = "tabPageConfig1";
@@ -2265,19 +2263,6 @@
             cmbCfgRtbViewEntryRM.Name = "cmbCfgRtbViewEntryRM";
             cmbCfgRtbViewEntryRM.Size = new Size(150, 28);
             cmbCfgRtbViewEntryRM.TabIndex = 3;
-            // 
-            // chkCfgAutoLoadCreateDefaultDB
-            // 
-            chkCfgAutoLoadCreateDefaultDB.AutoSize = true;
-            chkCfgAutoLoadCreateDefaultDB.Checked = true;
-            chkCfgAutoLoadCreateDefaultDB.CheckState = CheckState.Checked;
-            chkCfgAutoLoadCreateDefaultDB.Enabled = false;
-            chkCfgAutoLoadCreateDefaultDB.Location = new Point(16, 55);
-            chkCfgAutoLoadCreateDefaultDB.Name = "chkCfgAutoLoadCreateDefaultDB";
-            chkCfgAutoLoadCreateDefaultDB.Size = new Size(219, 24);
-            chkCfgAutoLoadCreateDefaultDB.TabIndex = 1;
-            chkCfgAutoLoadCreateDefaultDB.Text = "auto load/create default db?";
-            chkCfgAutoLoadCreateDefaultDB.UseVisualStyleBackColor = true;
             // 
             // buttonApplyConfig1
             // 
@@ -4200,7 +4185,6 @@
         private TabPage tabPageConfig1;
         private Button buttonApplyConfig1;
         private ToolStripMenuItem fontToolStripMenuItem;
-        private CheckBox chkCfgAutoLoadCreateDefaultDB;
         private ToolStripSeparator toolStripSeparator14;
         private ToolStripButton tsbuttonBullets;
         private ToolStripButton tsbuttonNumberedList;

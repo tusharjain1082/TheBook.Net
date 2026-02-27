@@ -14,9 +14,6 @@
     <Compile Update="FormNodeList.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Update="FormSelectDB.cs">
-      <SubType>Form</SubType>
-    </Compile>
     <Compile Update="FormSortOptions.cs">
       <SubType>Form</SubType>
     </Compile>

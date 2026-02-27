@@ -24,8 +24,4 @@
     <DebugType>none</DebugType>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SharpConfig\SharpConfig.csproj" />
-  </ItemGroup>
-
 </Project>

@@ -89,31 +89,6 @@ namespace DiaryJournal.Net
             }
             return true;
         }
-
-        /*
-        public bool readUsedSlotsFile()
-        {
-            if (usedSlotsFS == null) return false;
-            usedSlotsFS.Position = 0;
-            String body = usedSlotsReader.ReadToEnd();
-            this.usedSlots = UInt32.Parse(body);
-            return true;
-        }
-
-        public bool writeUsedSlotsFile(bool flush)
-        {
-            if (usedSlotsFS == null) return false;
-            usedSlotsFS.Position = 0;
-            usedSlotsFS.SetLength(0);
-            usedSlotsWriter.Write(usedSlots.ToString());
-            if (flush)
-            {
-                usedSlotsWriter.Flush();
-                usedSlotsFS.Flush();
-            }
-            return true;
-        }
-        */
         public bool RecreateRegistryFile()
         {
             // first close
@@ -149,7 +124,7 @@ namespace DiaryJournal.Net
             // set size status
             this.regFileSize = info.Length;
 
-            // 2. Create the MemoryMappedFile and a view accessor for the entire file
+            // 2. Create the MemoryMappedFile and a view stream for the entire file
             this.__regFilemmf = MemoryMappedFile.CreateFromFile(this.dbNodeTreeRegistryFile, FileMode.Open, null, 0, MemoryMappedFileAccess.ReadWrite);
             if (this.__regFilemmf == null) return false;
 

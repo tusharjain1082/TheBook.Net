@@ -124,14 +124,6 @@
           }
         }
       },
-      "SharpConfig/1.0.0": {
-        "runtime": {
-          "SharpConfig.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
       "TheArtOfDev.HtmlRenderer/1.0.0": {
         "runtime": {
           "TheArtOfDev.HtmlRenderer.dll": {
@@ -160,7 +152,6 @@
           "PDFsharp": "1.0.0",
           "RtfPipe": "1.0.0",
           "RtfWriter": "1.0.0",
-          "SharpConfig": "1.0.0",
           "TheArtOfDev.HtmlRenderer": "1.0.0",
           "TheArtOfDev.HtmlRenderer.PdfSharp": "1.0.0",
           "YamlDotNet": "1.0.0"
@@ -234,11 +225,6 @@
       "sha512": ""
     },
     "RtfWriter/1.0.0": {
-      "type": "project",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "SharpConfig/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

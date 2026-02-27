@@ -58,6 +58,7 @@ namespace DiaryJournal.Net
         public String xamlState = "";
         public String previousXamlState = "";
         public FormFind? myFormFind = null;
+        public TemplateFormat templateFormats = new TemplateFormat();
 
         // TheBook.Net
         public OpenFSDBContext? dbCtx = null;
@@ -72,8 +73,6 @@ namespace DiaryJournal.Net
         public List<RegisterItem>? RootSystemNodesRegistry = null;
         public RegisterItem? currentPathItem = null;
         public RegisterItem? emptySlotsItem = null;
-
-        public myConfig cfg = new myConfig();
 
         System.Windows.Controls.WpfRichTextBoxEx rtbEntry = new System.Windows.Controls.WpfRichTextBoxEx();
         System.Windows.Controls.PrintDialog pd = new System.Windows.Controls.PrintDialog();
@@ -174,8 +173,12 @@ namespace DiaryJournal.Net
             processSearch = new __processSearchDelegate(__processSearch);
 
             // now load config file and setup
-            dbCtx.config = cfg;
-            myConfigMethods.autoCreateLoadConfigFile(ref dbCtx.config, false);
+            dbCtx.config = new myConfig();
+            if (!File.Exists(myConfigMethods.getConfigPathFile()))
+                myConfigMethods.toYamlFile(dbCtx.config, myConfigMethods.getConfigPathFile());
+            else
+                dbCtx.config = myConfigMethods.fromYamlFile(myConfigMethods.getConfigPathFile());
+
             applyConfig();
 
             splitContainerH.Cursor = Cursors.Default;
@@ -420,12 +423,11 @@ namespace DiaryJournal.Net
 
         public void applyConfig()
         {
-            chkCfgAutoLoadCreateDefaultDB.Checked = cfg.chkCfgAutoLoadCreateDefaultDB;
-            rtbViewEntry.RightMargin = cfg.cmbCfgRtbViewEntryRMValue;
+            rtbViewEntry.RightMargin = dbCtx.config.cmbCfgRtbViewEntryRMValue;
             int index = cmbCfgRtbViewEntryRM.FindString(rtbViewEntry.RightMargin.ToString());
             cmbCfgRtbViewEntryRM.SelectedIndex = index;
-            radCfgLMNode.Checked = cfg.radCfgLMNode;
-            radCfgLCNode.Checked = cfg.radCfgLCNode;
+            radCfgLMNode.Checked = dbCtx.config.radCfgLMNode;
+            radCfgLCNode.Checked = dbCtx.config.radCfgLCNode;
         }
 
         public void viewEntry(RegisterItem item)
@@ -822,8 +824,6 @@ namespace DiaryJournal.Net
         {
             // reset everything
             reset();
-
-            dbCtx.config = cfg;
 
             // setup ui
             txtDBFile.Text = dbCtx.dbBasePath;
@@ -1436,25 +1436,22 @@ namespace DiaryJournal.Net
 
         private void buttonApplyConfig1_Click(object sender, EventArgs e)
         {
-            String err = "error configuration. retry after correcting it. aborted.";
             int rtbViewEntryRightMargin = 0;
             if (!int.TryParse(cmbCfgRtbViewEntryRM.Text, out rtbViewEntryRightMargin))
             {
-                MessageBox.Show(err, "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show("error configuration. retry after correcting it. aborted.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
 
             // first save config which is allowed to be saved while db is loaded.
             rtbViewEntry.RightMargin = rtbViewEntryRightMargin;
-            cfg.cmbCfgRtbViewEntryRMValue = rtbViewEntryRightMargin;
+            dbCtx.config.cmbCfgRtbViewEntryRMValue = rtbViewEntryRightMargin;
 
             // now set other 1st level config
-            cfg.radCfgLMNode = radCfgLMNode.Checked;
-            cfg.radCfgLCNode = radCfgLCNode.Checked;
-            cfg.chkCfgAutoLoadCreateDefaultDB = chkCfgAutoLoadCreateDefaultDB.Checked;
-            myConfigMethods.saveConfigFile(myConfigMethods.getConfigPathFile(), ref cfg, false);
-            MessageBox.Show("applied all levels of configurations.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
+            dbCtx.config.radCfgLMNode = radCfgLMNode.Checked;
+            dbCtx.config.radCfgLCNode = radCfgLCNode.Checked;
+            myConfigMethods.toYamlFile(dbCtx.config, myConfigMethods.getConfigPathFile());
+            MessageBox.Show("applied configuration.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         private void fontToolStripMenuItem_Click(object sender, EventArgs e)
@@ -2263,88 +2260,6 @@ namespace DiaryJournal.Net
         {
         }
 
-        public void exportSet(DatabaseType dbType, bool checkedNodesSet)
-        {
-            /* todo
-            // firstly save entry
-            saveEntry();
-
-            if (!dbCtx.isDBOpen())
-                return;
-
-            String destPath = "";
-            String dbName = "";
-            if (userInterface.ShowInputDialog("input set name/title", ref dbName) != DialogResult.OK) return;
-            if (dbName.Length <= 0) return;
-
-            // destination set db
-            switch (dbType)
-            {
-                case DatabaseType.OpenFSDB:
-                    if (browseFolder.ShowDialog(this) != DialogResult.OK)
-                        return;
-
-                    destPath = browseFolder.SelectedPath;
-
-                    break;
-
-                case DatabaseType.SingleFileDB:
-                    sfdDB.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                    if (sfdDB.ShowDialog() != DialogResult.OK)
-                        return;
-
-                    destPath = sfdDB.FileName;
-
-                    break;
-                default:
-                    return;
-            }
-
-            this.Invoke(toggleForm, false);
-
-            // what to export
-            List<myNode>? selectedNodes = null;
-            if (checkedNodesSet)
-                selectedNodes = (List<myNode>)this.Invoke(getHighestCheckedTreeViewItemsDBNodes, tvEntries);
-            else
-                selectedNodes = getRootNodes();
-
-            // export selected nodes set
-            entryMethods.ExportSet(this, ref cfg, ref allNodes, ref selectedNodes, dbName, destPath, dbType, true);
-
-            // reload without saving currently selected node because it was saved previously.
-            loadDB();
-
-            this.Invoke(toggleForm, true);
-            */
-        }
-
-        public void importSet(DatabaseType dbType)
-        {
-            // todo everything
-
-            // firstly save entry
-            saveEntry();
-
-            if (!dbCtx.isDBOpen())
-                return;
-
-            // source db
-            String dbName = "";
-            //myConfig? cfgSrc = entryMethods.DBSelectOpenLoadDB(dbType, ref dbName, null);
-            //i//f (cfgSrc == null) return;
-
-            // import source set db
-            //this.Invoke(toggleForm, false);
-            //entryMethods.ImportSet(this, ref cfgSrc, ref cfg, dbName, ref allNodes, dbType, true);
-
-            // reload without saving currently selected node because it was saved previously.
-            loadDB();
-
-            this.Invoke(toggleForm, true);
-
-        }
-
         private void newLabelNodeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             doNewLabelEntry();
@@ -2864,17 +2779,14 @@ namespace DiaryJournal.Net
 
         private void toolStripMenuItem46_Click(object sender, EventArgs e)
         {
-            exportSet(DatabaseType.OpenFSDB, false);
         }
 
         private void toolStripMenuItem47_Click(object sender, EventArgs e)
         {
-            exportSet(DatabaseType.OpenFSDB, true);
         }
 
         private void toolStripMenuItem48_Click(object sender, EventArgs e)
         {
-            importSet(DatabaseType.OpenFSDB);
         }
 
         private void exportAsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -3850,7 +3762,7 @@ namespace DiaryJournal.Net
             FormList form = new FormList();
             form.checkMultipleItems = false;
             form.listType = FormList.ListType.TemplateCode;
-            form.allItems = cfg.templateFormat.findAllTemplateCodeItems();
+            form.allItems = templateFormats.findAllTemplateCodeItems();
             if (form.ShowDialog(this) != DialogResult.OK) return;
             if (form.outSelectedItem == null) return;
             TemplateFormat.TemplateCodeItem item = (TemplateFormat.TemplateCodeItem)form.outSelectedItem;
@@ -3911,14 +3823,14 @@ namespace DiaryJournal.Net
                 xamlEntry.dummy.Rtf = rtf;
 
             // now fetch all template codes
-            List<Object> codes = cfg.templateFormat.findAllTemplateCodeItems();
+            List<Object> codes = templateFormats.findAllTemplateCodeItems();
 
             // now transform all codes
             foreach (Object? codeItem in codes)
             {
                 if (codeItem == null) continue;
                 TemplateFormat.TemplateCodeItem code = (TemplateFormat.TemplateCodeItem)codeItem;
-                cfg.templateFormat.transform(xamlEntry.dummy, code);
+                templateFormats.transform(xamlEntry.dummy, code);
             }
 
             // finally insert the transformed rtf into our primary rtb control at the selection location
