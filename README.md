@@ -15,9 +15,10 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 5. table insertion and modification.
 6. printing support.
 7. export to html.
-8. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
-9. minimal optimized memory use.
-10. most bugs fixed. a ready open source software with complete source code.
+8. templates. create your own custom templates.
+9. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
+10. minimal optimized memory use.
+11. most bugs fixed. a ready open source software with complete source code.
 
 ## using TheBook.Net
 download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\release\net10.0-windows" folder.
