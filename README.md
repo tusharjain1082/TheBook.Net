@@ -3,8 +3,6 @@ TheBook.Net is an open source book and story writing, notes keeping, journaling,
 
 ## TheBook.Net Requirements
 1. Windows 10/11 on desktop/laptop pc.
-2. .Net 10.0.
-3. 64 bit or x64 platform.
 
 ## open source
 TheBook.Net source code is available. you can compile it in Visual Studio 2026 and .Net 10.0. precompiled executable binary application files are published in releases section.
