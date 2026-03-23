@@ -14,7 +14,7 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 4. image insertion.
 5. table insertion and modification.
 6. printing support.
-7. export to html
+7. export to html.
 8. minimal optimized memory use.
 9. most bugs fixed. a ready open source software with complete source code.
   
