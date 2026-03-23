@@ -10,7 +10,7 @@ TheBook.Net is an open source book and story writing, notes keeping, journaling,
 TheBook.Net source code is available. you can compile it in Visual Studio 2026 and .Net 10.0. precompiled executable binary application files are published in releases section.
 
 ## features
-1. all records/nodes stored in open windows file system as editable files with unique ids. you are copy them modify them read them in word processing application.
+1. all records/nodes stored in open windows file system as editable files with unique ids. you can copy modify and read them in word processing application.
 2. 10 million or 1 crore entries even more can be created.
 3. deep trees with ancestors, parents, and their children, millions to billions. you can traverse and manipulate entire tree with billions of nodes with perfect recursion.
 4. image insertion.
