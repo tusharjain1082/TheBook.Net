@@ -20,7 +20,7 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 10. most bugs fixed. a ready open source software with complete source code.
 
 ## using TheBook.Net
-download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\net10.0-windows\release" folder.
+download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\release\net10.0-windows" folder.
 
 ## some advice on using TheBook.Net
 this project is new and i am the original sole developer. there may be bugs and implementation flaws in this application, and you may discover bugs in the application which i do not know. please report them to me. some bugs may remain unfixed because it takes time to fix them. so you should frequently backup everything, the application along with the entire database which you use for writing. this is to ensure you always have a latest saved backup copy of your journal database and all it's mandatory config files in case anything goes wrong for example a hardware or software or database failure or corruption. 
