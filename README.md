@@ -15,8 +15,9 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 5. table insertion and modification.
 6. printing support.
 7. export to html.
-8. minimal optimized memory use.
-9. most bugs fixed. a ready open source software with complete source code.
+8. organize texts. you can write books with myriads of chapters each in their own unique nodes/records.
+9. minimal optimized memory use.
+10. most bugs fixed. a ready open source software with complete source code.
   
 ## some advice on using TheBook.Net
 this project is new and i am the original sole developer. there may be bugs and implementation flaws in this application, and you may discover bugs in the application which i do not know. please report them to me. some bugs may remain unfixed because it takes time to fix them. so you should frequently backup everything, the application along with the entire database which you use for writing. this is to ensure you always have a latest saved backup copy of your journal database and all it's mandatory config files in case anything goes wrong for example a hardware or software or database failure or corruption. 
