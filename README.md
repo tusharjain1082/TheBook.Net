@@ -27,8 +27,5 @@ if you require security and privacy, you can keep this application and your writ
 ## download
 you can download precompiled portable self contained application in releases section. complete source code is also available.
 
-## your feedback
-I Tushar Jain am the original sole developer and maintainer of TheBook.Net and it's source code. your feedback and rating is more important for this open source application and it's source code to persist, and for others to know and trust this application and it's worthiness. so please give star rating if you find this application to be worthy and eligible.
-
 ## screenshots
 ![Alt text](/screenshot1.jpeg?raw=false "TheBook.Net screenshot")
