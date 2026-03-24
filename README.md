@@ -1,9 +1,6 @@
 # TheBook.Net Introduction
 TheBook.Net is an open source book and story writing, notes keeping, journaling, and diary software for all kinds of writers. TheBook.Net is meant for writers novelists journalists and diary keepers and for anybody who needs an application for collecting, keeping and organizing texts. you can also insert images into the entries. you can download the latest release application binary files package and test and use it right away, see if it fits your needs. 
 
-## TheBook.Net Requirements
-1. Windows 10/11 on desktop/laptop pc.
-
 ## open source
 TheBook.Net source code is available. you can compile it in Visual Studio 2026 and .Net 10.0. precompiled executable binary application files are published in releases section.
 
