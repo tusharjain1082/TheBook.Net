@@ -371,9 +371,8 @@ namespace TheBook.Net.Core
     public class Register
     {
         public const UInt32 default_RootNodeId = 0;
-        //public const int default_totalPreallocatedNodes = 10000001; // 10 million or 1 crore slots/nodes; //8000001; // 8 million slots/nodes; 3 million slots/nodes //1000001; // 3 million nodes + 1 root node preallocated in register
         public const int default_totalPreallocatedNodes = 10000001; // 10 million or 1 crore slots/nodes 8000001; // 8 million slots/nodes; 3 million slots/nodes //1000001; // 3 million nodes + 1 root node preallocated in register
-        public const int default_maxChildrenNodes = 200; // 200 direct children; max new direct children created/inserted in any parent node throughout db.
+        public const int default_maxChildrenNodes = 10000; // 10000 direct children; max new direct children created/inserted in any parent node throughout db.
         public MemoryStream? registerStream = null;
         public String file = "";
         public bool loadRegisterCopyToMemory(String file)
