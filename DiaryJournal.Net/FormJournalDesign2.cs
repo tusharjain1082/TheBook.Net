@@ -3798,12 +3798,20 @@ namespace DiaryJournal.Net
 
             // reload latest state
             RegisterItem? parent = entryMethodsNewDesign.findRegistrySystemNodeItemByType(this.RootSystemNodesRegistry, NodeType.Templates);
-            parent = Register.LoadSetupRegisterItem(dbCtx, parent.Id, true, false, true, true, true, true);
+            parent = Register.LoadSetupRegisterItem(dbCtx, parent.Id, true, false, false, false, true, true);
             if (parent == null) return;
+
+            String? rtf = "";
+            byte[]? xamlbytes = null;
+
+            List<RegisterItem>? desc = null;
+            parent.tree.GetDescendantTreeSequence(ref desc, NodeType.Template);
+            foreach (RegisterItem obj in desc)
+                obj.loadNode(dbCtx, ref rtf, ref xamlbytes, false);
 
             // show all templates list form and let the user choose a single template
             FormNodeList form = new FormNodeList();
-            form.registry = parent.childrenList;
+            form.registry = desc;//parent.childrenList;
             form.nodeTypes.Add(NodeType.Template);
             form.checkMultipleNodes = false;
             form.listDeletedNodes = false;
@@ -3812,8 +3820,6 @@ namespace DiaryJournal.Net
 
             // load rtf data of the selected template from it's db node
             RegisterItem? item = form.outSelectedNode;
-            String? rtf = "";
-            byte[]? xamlbytes = null;
             item.loadNode(dbCtx, ref rtf, ref xamlbytes, true);
 
             // initialize an rtb control and set the rtf into it for processing

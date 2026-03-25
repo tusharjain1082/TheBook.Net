@@ -10,7 +10,7 @@
 	  <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
 	  <PlatformTarget>AnyCPU</PlatformTarget>
 	  <NoWarn>CA1416</NoWarn>
-	  <SignAssembly>True</SignAssembly>
+	  <SignAssembly>False</SignAssembly>
 	  <AssemblyOriginatorKeyFile>E:\TheBook.Net\signature-files(keep private)\TheBook.Net\keypair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 

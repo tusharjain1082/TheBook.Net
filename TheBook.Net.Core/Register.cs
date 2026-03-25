@@ -2551,7 +2551,7 @@ namespace TheBook.Net.Core
         }
 
         // we get all decendants in tree sequence of parent
-        public bool GetDescendantTreeSequence(ref List<RegisterItem> listOut)
+        public bool GetDescendantTreeSequence(ref List<RegisterItem> listOut, NodeType type = NodeType.AnyOrAll)
         {
             RegisterItem? original = current;
 
@@ -2564,8 +2564,17 @@ namespace TheBook.Net.Core
             {
                 RegisterItem? nextItem = Next();
                 if (nextItem == null) break;
-                
-                list.Add(nextItem); // yes this is a descendant and exists under ancestor
+
+                if (type == NodeType.AnyOrAll)
+                {
+                    list.Add(nextItem); // yes this is a descendant and exists under ancestor
+                }
+                else
+                {
+                    if (nextItem.nodeType == type)
+                        list.Add(nextItem); // yes this is a descendant and exists under ancestor
+                }
+
             }
             current = original;
             return true;
