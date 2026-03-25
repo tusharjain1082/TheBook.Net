@@ -10,8 +10,8 @@
 	  <AllowUnsafeBlocks>False</AllowUnsafeBlocks>
 	  <PlatformTarget>AnyCPU</PlatformTarget>
 	  <NoWarn>CA1416</NoWarn>
-	  <SignAssembly>False</SignAssembly>
-	  <AssemblyOriginatorKeyFile>E:\TheBook.Net\signature-files(keep private)\TheBook.Net\keypair.snk</AssemblyOriginatorKeyFile>
+	  <SignAssembly>True</SignAssembly>
+	  <AssemblyOriginatorKeyFile>..\strong-name\keypair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
