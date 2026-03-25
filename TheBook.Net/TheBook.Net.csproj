@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+	<CurrentDateTime>$([System.DateTime]::Now.ToString("dddd, dd MMMM yyyy HH:mm:ss"))</CurrentDateTime>
+	<Platforms>AnyCPU;x64;x86</Platforms>
+	<SignAssembly>False</SignAssembly>
+	<AssemblyOriginatorKeyFile>E:\TheBook.Net\signature-files(keep private)\TheBook.Net\keypair.snk</AssemblyOriginatorKeyFile>
+	<BaseOutputPath>E:\TheBook.Net\TheBook.Net\bin</BaseOutputPath>
+    <NoWarn>CA1416</NoWarn>
+    <ApplicationIcon>journal_richtext_icon_160014 (2).ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
+    <DebugType>none</DebugType>
+    <Optimize>True</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="journal_richtext_icon_160014 (2).ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DiaryJournal.Net\DiaryJournal.Net.csproj" />
+    <ProjectReference Include="..\TheBook.Net.Core\TheBook.Net.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="LICENSE.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="README.md">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+		<Exec Command="echo %25date%25 &gt; &quot;$(ProjectDir)\Resources\BuildDate.txt&quot;&#xD;&#xA;echo %25time%25 &gt; &quot;$(ProjectDir)\Resources\BuildTime.txt&quot;&#xD;&#xA;echo $(CurrentDateTime) &gt; &quot;$(ProjectDir)\Resources\BuildDateTime.txt&quot;" />
+	</Target>
+
+</Project>
