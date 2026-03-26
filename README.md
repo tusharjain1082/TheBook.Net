@@ -15,7 +15,7 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 8. export to raw text .txt file by removing all formatting and media.
 9. templates. create your own custom templates.
 10. font formatting, font size, bold, italics, etc.
-11. import text .txt, .rtf, .xaml documents with their titles/names.
+11. import .txt, .rtf, .xaml documents with their titles/names.
 12. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
 13. minimal optimized memory use.
 14. most bugs fixed. a ready open source software with complete source code.
