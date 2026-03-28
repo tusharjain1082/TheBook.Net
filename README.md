@@ -8,7 +8,7 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 1. all records/nodes stored in open windows file system as editable files with unique ids. you can copy modify and read them in word processing application.
 2. 10 million or 1 crore entries even more can be created.
 3. deep trees with ancestors, parents, and their children, millions. you can traverse and manipulate entire tree with millions of nodes with perfect recursion.
-4. billions of nodes possible in tree but this depends on memory and computer power.
+4. billions of nodes and traversal with perfect recursion possible in tree, but this depends on memory and computer power.
 5. image insertion.
 6. table insertion and modification.
 7. printing support.
