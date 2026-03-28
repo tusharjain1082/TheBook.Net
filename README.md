@@ -8,17 +8,18 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 1. all records/nodes stored in open windows file system as editable files with unique ids. you can copy modify and read them in word processing application.
 2. 10 million or 1 crore entries even more can be created.
 3. deep trees with ancestors, parents, and their children, millions. you can traverse and manipulate entire tree with millions of nodes with perfect recursion.
-4. image insertion.
-5. table insertion and modification.
-6. printing support.
-7. export to html.
-8. export to raw text .txt file by removing all formatting and media.
-9. templates. create your own custom templates.
-10. font formatting, font size, bold, italics, etc.
-11. import .txt, .rtf, .xaml documents with their titles/names into current node path.
-12. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
-13. minimal optimized memory use.
-14. most bugs fixed. a ready open source software with complete source code.
+4. billions of nodes possible in tree but this depends on memory and computer power.
+5. image insertion.
+6. table insertion and modification.
+7. printing support.
+8. export to html.
+9. export to raw text .txt file by removing all formatting and media.
+10. templates. create your own custom templates.
+11. font formatting, font size, bold, italics, etc.
+12. import .txt, .rtf, .xaml documents with their titles/names into current node path.
+13. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
+14. minimal optimized memory use.
+15. most bugs fixed. a ready open source software with complete source code.
 
 ## using TheBook.Net
 download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\release\net10.0-windows" folder.
