@@ -6,8 +6,8 @@ TheBook.Net source code is available. you can compile it in Visual Studio 2026 a
 
 ## features
 1. all records/nodes stored in open windows file system as editable files with unique ids. you can copy modify and read them in word processing application.
-2. 10 million or 1 crore entries even more can be created. 1 billion+ nodes possible.
-3. deep trees with ancestors, parents, and their children, millions to billions. you can traverse and manipulate entire tree with billions of nodes with perfect recursion.
+2. 10 million or 1 crore entries even more can be created.
+3. deep trees with ancestors, parents, and their children, millions. you can traverse and manipulate entire tree with millions of nodes with perfect recursion.
 4. image insertion.
 5. table insertion and modification.
 6. printing support.
