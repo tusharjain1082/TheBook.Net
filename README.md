@@ -9,17 +9,18 @@ TheBook.Net source code is available. both application and source code licensed 
 2. 10 million or 1 crore entries even more can be created.
 3. deep trees with ancestors, parents, and their children, millions. you can traverse and manipulate entire tree with millions of nodes with perfect recursion.
 4. publish as completely stand alone self contained portable application with all dependencies included.
-5. image insertion.
-6. table insertion and modification.
-7. printing support.
-8. export to html.
-9. export to raw text .txt file by removing all formatting and media.
-10. templates. create your own custom templates.
-11. font formatting, font size, bold, italics, etc.
-12. import .txt, .rtf, .xaml documents with their titles/names into current node path.
-13. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
-14. minimal optimized memory use.
-15. most bugs fixed. a ready open source software with complete source code.
+5. insert image.
+6. insert table and modifify it.
+7. insert current or other date and time.
+8. printing support.
+9. export to html.
+10. export to raw text .txt file by removing all formatting and media.
+11. templates. create your own custom templates.
+12. font formatting, font size, bold, italics, etc.
+13. import .txt, .rtf, .xaml documents with their titles/names into current node path.
+14. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
+15. minimal optimized memory use.
+16. most bugs fixed. a ready open source software with complete source code.
 
 ## using TheBook.Net
 download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\release\net10.0-windows" folder.
