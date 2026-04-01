@@ -13,7 +13,7 @@ TheBook.Net source code is available. both application and source code licensed 
 6. insert table and modifify it.
 7. insert current or other date and time.
 8. printing support.
-9. export to html.
+9. export to html, rtf, xaml.
 10. export to raw text .txt file by removing all formatting and media.
 11. templates. create your own custom templates.
 12. font formatting, font size, bold, italics, etc.
