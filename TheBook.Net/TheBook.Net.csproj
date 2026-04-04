@@ -14,6 +14,7 @@
 	<BaseOutputPath>E:\TheBook.Net\TheBook.Net\bin</BaseOutputPath>
     <NoWarn>CA1416</NoWarn>
     <ApplicationIcon>journal_richtext_icon_160014 (2).ico</ApplicationIcon>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
