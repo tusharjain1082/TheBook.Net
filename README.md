@@ -2,22 +2,26 @@
 TheBook.Net is an open source book and story writing, notes keeping, journaling, and diary software for all kinds of writers. TheBook.Net is meant for writers novelists journalists and diary keepers and for anybody who needs an application for collecting, keeping and organizing texts. you can also insert images into the entries. you can download the latest release application binary files package and test and use it right away, see if it fits your needs. 
 
 ## open source
-TheBook.Net source code is available. you can compile it in Visual Studio 2026 and .Net 10.0. precompiled executable binary application files are published in releases section.
+TheBook.Net source code is available. both application and source code licensed under GPL v3 open source license. i take no liability for anything and i am not responsible for any damage or loss or anything. please use them at your own responsibility and liability. the source code is as is. you can compile it in Visual Studio 2026 and .Net 10.0. precompiled executable binary application files are published in releases section.
 
 ## features
 1. all records/nodes stored in open windows file system as editable files with unique ids. you can copy modify and read them in word processing application.
-2. 10 million or 1 crore entries even more can be created. 1 billion+ nodes possible.
-3. deep trees with ancestors, parents, and their children, millions to billions. you can traverse and manipulate entire tree with billions of nodes with perfect recursion.
-4. image insertion.
-5. table insertion and modification.
-6. printing support.
-7. export to html.
-8. export to raw text .txt file by removing all formatting and media.
-9. templates. create your own custom templates.
-10. font formatting, font size, bold, italics, etc.
-11. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
-12. minimal optimized memory use.
-13. most bugs fixed. a ready open source software with complete source code.
+2. 10 million or 1 crore entries even more can be created.
+3. deep trees with ancestors, parents, and their children, millions. you can traverse and manipulate entire tree with millions of nodes with perfect recursion.
+4. publish as completely stand alone self contained portable application with all dependencies included.
+5. insert image.
+6. insert table and modifify it.
+7. insert current or other date and time.
+8. printing support.
+9. export to html, rtf, xaml.
+10. export to raw text .txt file by removing all formatting and media.
+11. templates. create your own custom templates.
+12. font formatting, font size, bold, italics, etc.
+13. import .txt, .rtf, .xaml documents with their titles/names into current node path.
+14. clone node to custom location.
+15. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
+16. minimal optimized memory use.
+17. most bugs fixed. a ready open source software with complete source code.
 
 ## using TheBook.Net
 download completely portable self-contained application zip package located in releases section and use it rightaway with no dependency or .net issue because all dependencies are included with the application. if you have .Net 10.0 Desktop runtime installed in windows, you can also straightforwardly run the application from "bin\release\net10.0-windows" folder.
