@@ -1,8 +1,0 @@
-<Project>
-  <PropertyGroup>
-    <!-- Set a common Target Framework for all projects -->
-    <TargetFramework>net10.0-windows</TargetFramework>
-    <!-- Enable Build Acceleration for faster incremental builds in Visual Studio -->
-    <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
-  </PropertyGroup>
-</Project>
