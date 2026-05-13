@@ -267,6 +267,7 @@
             toolStripMenuItem8 = new ToolStripMenuItem();
             toolStripMenuItem10 = new ToolStripMenuItem();
             toolStripMenuItem34 = new ToolStripMenuItem();
+            toolStripMenuItem38 = new ToolStripMenuItem();
             toolStripMenuItem12 = new ToolStripMenuItem();
             toolStripSeparator66 = new ToolStripSeparator();
             toolStripMenuItem52 = new ToolStripMenuItem();
@@ -445,7 +446,6 @@
             pdRtbEntry = new System.Drawing.Printing.PrintDocument();
             ppDlgRtbEntry = new PrintPreviewDialog();
             timerSetRtbEntry = new System.Windows.Forms.Timer(components);
-            toolStripMenuItem38 = new ToolStripMenuItem();
             ((System.ComponentModel.ISupportInitialize)splitContainerH).BeginInit();
             splitContainerH.Panel1.SuspendLayout();
             splitContainerH.Panel2.SuspendLayout();
@@ -2539,6 +2539,13 @@
             toolStripMenuItem34.Text = "export current node tree as pdf entries";
             toolStripMenuItem34.Click += toolStripMenuItem34_Click;
             // 
+            // toolStripMenuItem38
+            // 
+            toolStripMenuItem38.Name = "toolStripMenuItem38";
+            toolStripMenuItem38.Size = new Size(500, 22);
+            toolStripMenuItem38.Text = "export current node tree as xaml entries";
+            toolStripMenuItem38.Click += toolStripMenuItem38_Click;
+            // 
             // toolStripMenuItem12
             // 
             toolStripMenuItem12.Name = "toolStripMenuItem12";
@@ -3646,7 +3653,7 @@
             // aboutToolStripMenuItem
             // 
             aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            aboutToolStripMenuItem.Size = new Size(107, 22);
+            aboutToolStripMenuItem.Size = new Size(180, 22);
             aboutToolStripMenuItem.Text = "About";
             aboutToolStripMenuItem.Click += aboutToolStripMenuItem_Click;
             // 
@@ -3719,13 +3726,6 @@
             // 
             timerSetRtbEntry.Interval = 10;
             timerSetRtbEntry.Tick += timerSetRtbEntry_Tick;
-            // 
-            // toolStripMenuItem38
-            // 
-            toolStripMenuItem38.Name = "toolStripMenuItem38";
-            toolStripMenuItem38.Size = new Size(500, 22);
-            toolStripMenuItem38.Text = "export current node tree as xaml entries";
-            toolStripMenuItem38.Click += toolStripMenuItem38_Click;
             // 
             // FormJournalDesign1
             // 

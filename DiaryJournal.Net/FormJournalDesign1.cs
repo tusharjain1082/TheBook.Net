@@ -27,6 +27,7 @@ using System.Windows.Documents;
 using System.Windows.Forms;
 using System.Windows.Forms.Integration;
 using System.Windows.Media.Imaging;
+using System.Windows.Shapes;
 using TheBook.Net.Core;
 
 namespace DiaryJournal.Net
@@ -686,6 +687,12 @@ namespace DiaryJournal.Net
             if (!dbCtx.isDBOpen())
                 return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             browseFolder.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); //Application.StartupPath;
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
@@ -918,16 +925,44 @@ namespace DiaryJournal.Net
             formOperation.close();
 
             // now finally present the demanded nodes in user interface according to configuration
+            currentPathItem = null;
             reload();
 
             return true;
         }
         public void reload()
         {
+            // first save current entry
+            saveEntry();
+
             // first empty the tree view control
             tvTree.Nodes.Clear();
-            reloadPath(textboxPath.Text, true, null);
+
+            //if (currentPathItem != null)
+            //    currentPathItem = Register.LoadSetupRegisterItem(dbCtx, currentPathItem.Id, true, false, false, false, false, false);
+            //else
+            //    currentPathItem = Register.LoadSetupRegisterItem(dbCtx, 0, true, false, false, false, false, false);
+
+            // phase 1 - firstly get the registry node item
+            List<RegisterItem>? registry = null;
+            if (!Register.LoadFullPath(dbCtx, textboxPath.Text, ref registry, true))
+                return; // critical error abort
+
+            RegisterItem? item = registry.LastOrDefault();
+            currentPathItem = item;
+
+            TreeNode? tvItem = null;
+            TreeNode? tvParent = null;
+            List<TreeNode?> tvLineage = null;
+            List<RegisterItem?> lineage = null;
+
+            // first add new node in tree view
+            getTreeNodesLineage(currentPathItem, true, ref tvParent, ref tvItem, ref lineage, ref tvLineage);
+
+            // final setup
+            tvTree.SelectedNode = tvItem;
         }
+
         public bool __findTreeNode(TreeNode parent, String strId, out TreeNode? treeNodeOut)
         {
             TreeNode[] nodes = parent.Nodes.Find(strId, false);
@@ -1279,9 +1314,15 @@ namespace DiaryJournal.Net
             if (!dbCtx.isDBOpen())
                 return;
 
-            if (currentPathItem == null) return;
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
+            if (currentPathItem == null) return;
             currentPathItem = Register.LoadSetupRegisterItem(dbCtx, currentPathItem.Id, true, false, false, false, true, true);
+            if (currentPathItem == null) return;
 
             // save current caret position
             entryMethods.DBUpdateCaretConfig(dbCtx, currentPathItem.node, rtbEntry.SelectionStartOffset, rtbEntry.SelectionLength);
@@ -1289,12 +1330,6 @@ namespace DiaryJournal.Net
             // check if body was changed
             if (!stateChanged)
                 return;
-
-            if (dbCtx.readOnly)
-            {
-                MessageBox.Show("cannot save entry. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
-            }
 
             // first rotate and save new state for emergency restore
             __rotateInsertState();
@@ -1333,6 +1368,12 @@ namespace DiaryJournal.Net
         {
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             currentPathItem = Register.LoadSetupRegisterItem(dbCtx, currentPathItem.Id, true, false, false, false, false, false);
 
@@ -2537,6 +2578,12 @@ namespace DiaryJournal.Net
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // firstly save entry
             __saveEntry();
 
@@ -2601,6 +2648,12 @@ namespace DiaryJournal.Net
             if (currentPathItem.Id <= 0) return;
             if (currentPathItem.Id == destId) return;
             if (currentPathItem.parentId == destId) return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             // firstly save entry
             __saveEntry();
@@ -2719,6 +2772,12 @@ namespace DiaryJournal.Net
 
             if (currentPathItem == null) return;
             if (currentPathItem.Id <= 0) return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             currentPathItem = Register.LoadSetupRegisterItem(dbCtx, currentPathItem.Id, true, false, false, false, false, false);
 
@@ -2977,6 +3036,12 @@ namespace DiaryJournal.Net
             if (currentPathItem == null) return;
             if (currentPathItem.Id == 0) return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             currentPathItem = Register.LoadSetupRegisterItem(dbCtx, currentPathItem.Id, true, false, false, false, false, false);
 
             DateTime inputDate = currentPathItem.node.chapter.chapterDateTime;
@@ -3080,6 +3145,12 @@ namespace DiaryJournal.Net
             if (!dbCtx.isDBOpen())
                 return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             browseFolder.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); //Application.StartupPath;
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
@@ -3158,7 +3229,6 @@ namespace DiaryJournal.Net
                     xaml = xamlEntry.dummy.XamlBytes;
                 }
 
-                // 3rd import rtf and file as new node into set top node
                 // finally write body of the node in db
                 entryMethods.DBUpdateNodeOFSDB(dbCtx, targetNode, rtf, xaml, true, false, false, EntryType.Default);
 
@@ -3578,11 +3648,17 @@ namespace DiaryJournal.Net
         }
         private void configureEntrysWidthToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // first save the current entry
-            saveEntry();
-
             if (!dbCtx.isDBOpen())
                 return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            // first save the current entry
+            saveEntry();
 
             if (currentPathItem == null) return;
 
@@ -3745,6 +3821,12 @@ namespace DiaryJournal.Net
 
         private void cloneEntryToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // firstly save entry
             __saveEntry();
 
@@ -3792,6 +3874,12 @@ namespace DiaryJournal.Net
 
         private void cloneToOtherLocationToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // firstly save entry
             __saveEntry();
 
@@ -3815,6 +3903,12 @@ namespace DiaryJournal.Net
 
         private void toolStripMenuItem75_Click(object sender, EventArgs e)
         {
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             // firstly save entry
             __saveEntry();
 
@@ -4038,6 +4132,12 @@ namespace DiaryJournal.Net
         {
             if (!dbCtx.isDBOpen())
                 return;
+
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
             // first save the entry
             saveEntry();

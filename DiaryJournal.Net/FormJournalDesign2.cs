@@ -656,6 +656,65 @@ namespace DiaryJournal.Net
                 MessageBox.Show("error entry not created", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+        public bool ForceSetupNewEntrySilent(DateTime dateTime, ref RegisterItem? outItem, Chapter? chapter = null,
+            UInt32 parentId = 0, bool useParentId = false, NodeType nodeType = NodeType.Entry,
+            String title = "", String? rtf = "", byte[]? xamlbytes = null)
+        {
+            if (!dbCtx.isDBOpen())
+                return false;
+
+            if (dbCtx.readOnly)
+                return false;
+
+            // firstly save entry
+            __saveEntry();
+
+            // create load calendar nodes
+            RegisterItem? year = null;
+            RegisterItem? month = null;
+            // create-load year node
+            if (!entryMethodsNewDesign.DBCreateLoadYearSystemNode(dbCtx, RootSystemNodesRegistry, emptySlotsItem, dateTime, ref year))
+                return false;
+
+            // create-load month node
+            if (!entryMethodsNewDesign.DBCreateLoadMonthSystemNode(dbCtx, emptySlotsItem, year, dateTime, ref month))
+                return false;
+
+            myNode node = new myNode();
+            if (chapter != null) node.chapter = chapter;
+
+            if (useParentId)
+                node.chapter.parentId = parentId;
+            else
+                node.chapter.parentId = month.Id;
+
+            node.chapter.chapterDateTime = dateTime;
+            node.chapter.creationDateTime = DateTime.Now;
+            node.chapter.modificationDateTime = DateTime.Now;
+            node.chapter.nodeType = nodeType;
+            node.chapter.Title = title;
+
+            RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, node.chapter.parentId, true, false, false, false, false, false);
+            if (parent == null)
+                return false; // parent not found or critical error
+
+            // now create registry and node
+
+            RegisterItem? item = Register.Insert(dbCtx, parent.Id, emptySlotsItem, node, rtf, xamlbytes);
+            if (item != null)
+            {
+                outItem = item;
+
+                // success
+                return true;
+            }
+            else
+            {
+                outItem = null;
+                return false; // critical error
+            }
+        }
+
         private void TheJournalImportrtfEntriesToolStripMenuItem_Click(object sender, EventArgs e)
         {
             doImportRtfEntries(false);
@@ -665,134 +724,102 @@ namespace DiaryJournal.Net
             if (!dbCtx.isDBOpen())
                 return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             browseFolder.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); //Application.StartupPath;
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
 
-            string? input = "the journal set";
-            if (alienEntries)
-                input = "other calendar import set";
-
-            if (userInterface.ShowInputDialog("input new clone set name/title", ref input) != DialogResult.OK)
-                return;
-
-            if (input.Length <= 0)
-                return;
-
-            __importTheJournalRtfEntries(browseFolder.SelectedPath, input, true);
+            __importTheJournalRtfEntries(browseFolder.SelectedPath);
         }
         private void toolStripMenuItem70_Click(object sender, EventArgs e)
         {
             doImportRtfEntries(true);
         }
-        public void __importTheJournalRtfEntries(String path, String importSetName, bool loadOperationForm)
-        {
-            /* todo tushar: upgrade to latest 02 January 2025
-            // first save the entry
-            this.Invoke(saveEntry);
 
+        public void __importTheJournalRtfEntries(String path)
+        {
             if (!dbCtx.isDBOpen())
                 return;
 
-            this.Invoke(toggleForm, false);
+            // first save the entry
+            saveEntry();
 
             // operations status form
+            this.Invoke(toggleForm, false);
             FormOperation? formOperation = null;
-            if (loadOperationForm)
-                formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
-            System.Windows.Forms.RichTextBox richTextBox = new System.Windows.Forms.RichTextBox();
-
+            // first initialize
             IEnumerable<FileInfo> files = myCommonMethods1.EnumerateFiles(path, EntryType.Rtf);
-            long index = 0;
-            long total = files.LongCount();
+            Int32 index = 0;
+            Int32 total = files.Count();
+            if (total <= 0) return;
 
-            // first we need to create a set node. we cannot import anything at all without a set node.
-            myNode? setNode = entryMethods.createSetNode(dbCtx, importSetName, DateTime.Now);
+            // first create set top node
+            // do not use set node
+            /*
+            RegisterItem? setNode = null;
+            if (!ForceSetupNewEntrySilent(DateTime.Now, ref setNode, null, 0, NodeType.Set, importSetName, "", null))
+            {
+                MessageBox.Show("error, set node not created", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return; // error set node not created
+            }
 
-            // import set node
-            entryMethods.DBCreateNode(dbCtx, ref setNode, "", false, false, false, false, true, true);
+            // reload
+            setNode = Register.LoadSetupRegisterItem(dbCtx, setNode.Id, true, false, false, false, true, true);
+            */
 
-            // this set's own context session work list
-            List<myNode> setList = new List<myNode>();
+            // load set node
+            //TreeNode? tvSetNodeItem = null;
+            //TreeNode? tvSetNodeParent = null;
+            //List<TreeNode?> tvSetNodeLineage = null;
+            //List<RegisterItem?> setNodelineage = null;
+
+            // first add new node in tree view
+            //getTreeNodesLineage(setNode, true, ref tvSetNodeParent, ref tvSetNodeItem, ref setNodelineage, ref tvSetNodeLineage);
+
+            // reconfigure labels
+            //reloadTreeNodeConfigLabel(tvParent);
 
             foreach (FileInfo file in files)
             {
-                // everything inside the set and the set node is virtual and relative, not based on anything outside the set and set node.
+                // 2nd load rtf from file
+                String? rtf = File.ReadAllText(file.FullName);
 
                 Chapter? chapter = theJournalMethods.convertFilenameToChapter(file.FullName);
                 if (chapter == null)
                     continue;
 
-                // get rtf and update
-                // richtextbox automatically cleans and fixes a corrupted rtf and makes it valid.
-                // so we first load the imported rtf into a richtextbox object, then retrieve the cleaned and fixed
-                // rtf from it and only then store it in db.
-                String rtf = File.ReadAllText(file.FullName);
-                rtf = theJournalMethods.fixTheJournalRtfEntry(rtf);
-                richTextBox.Rtf = rtf;
-                rtf = richTextBox.Rtf;
-
-                // by default all entries imported from "The Journal" are root entries aligned in Year and Month Nodes.
-                // entry's properties
-                chapter.nodeType = NodeType.Entry;
-
-                // initialize calender nodes
-                myNode? yearNode = null;
-                myNode? monthNode = null;
-
-                // initialize set's own virtual calendar nodes
-                entryMethods.initCalenderNodesNonSystemSet(dbCtx, ref setList, ref setNode, chapter.chapterDateTime.Year,
-                    chapter.chapterDateTime.Month, out yearNode, out monthNode, true);
-
-                // now setup the chapter with the year and month config
-                chapter.parentId = monthNode.chapter.Id;
-
-                // create new node into db
-                myNode? newNode = new myNode(ref chapter);
-                newNode = entryMethods.DBNewNode(dbCtx,
-                    SpecialNodeType.None, NodeType.Entry, DomainType.Journal,
-                    ref newNode, true, true, true, chapter.chapterDateTime, chapter.parentId, true, chapter.Title, rtf,
-                    true, true, false);
-
-                if (newNode == null)
-                    continue;
-
-                // node op success, load the node into the global context session work list
-                setList.Add(newNode);
-
-                // update ui
-                if (loadOperationForm)
+                byte[]? xaml = null;
+                if (dbCtx.dbEntryType == EntryType.Xaml)
                 {
-                    formOperation.updateProgressBar(index, total);
-                    formOperation.updateFilesStatus(index, total);
+                    xamlEntry.dummy.Rtf = rtf;
+                    xaml = xamlEntry.dummy.XamlBytes;
                 }
 
-                // update
-                index++;
+                // 3rd import rtf and file as new node into set top node
+                // create file
+                RegisterItem? child = null;
+                if (!ForceSetupNewEntrySilent(chapter.chapterDateTime, ref child, chapter, 0, false, NodeType.Entry, chapter.Title, rtf, xaml))
+                    continue; // error set node not created
+
+                // update progress
+                formOperation.updateProgressBar(index, total);
+                formOperation.updateFilesStatus(index++, total);
+
             }
 
-            // checkpoint
-            entryMethods.DBCheckpoint(ref cfg);
-
-            // finally update the db index in file.
-            entryMethods.DBWriteIndexing(ref cfg);
-
-            // now first add set node
-            allNodes.Add(setNode);
-
-            // now add all set list into the global session work list
-            allNodes.AddRange(setList);
-
             this.Invoke(toggleForm, true);
+            formOperation.close();
 
-            if (loadOperationForm)
-                formOperation.close();
+            reload();
 
-            //todo mySystemNodes? systemNodes = null;
-            //reloadAll(true, true, true, true, ref systemNodes);
-            */
-
+            MessageBox.Show($"{index} entries imported of total {total} entries.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
 
         public void __showMessageBox(String text, String title, MessageBoxButtons buttons, MessageBoxIcon icon)
@@ -2819,6 +2846,12 @@ namespace DiaryJournal.Net
             if (!dbCtx.isDBOpen())
                 return;
 
+            if (dbCtx.readOnly)
+            {
+                MessageBox.Show("error. database read-only.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
             browseFolder.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments); //Application.StartupPath;
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
@@ -2834,100 +2867,87 @@ namespace DiaryJournal.Net
                 return;
 
 
-            __importTheJournalNonCalendarRtfEntriesNew(browseFolder.SelectedPath, input, true);
+            __importTheJournalNonCalendarRtfEntriesNew(browseFolder.SelectedPath, input);
 
         }
 
-        public void __importTheJournalNonCalendarRtfEntriesNew(String path, String importSetName, bool loadOperationForm)
+        public void __importTheJournalNonCalendarRtfEntriesNew(String path, String importSetName)
         {
-            // first save the entry
-            this.Invoke(saveEntry);
-
             if (!dbCtx.isDBOpen())
                 return;
 
-            this.Invoke(toggleForm, false);
+            // first save the entry
+            saveEntry();
 
             // operations status form
+            this.Invoke(toggleForm, false);
             FormOperation? formOperation = null;
-            if (loadOperationForm)
-                formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
-            //AdvRichTextBox rtb = new AdvRichTextBox();
-            //rtb.WordWrap = false;
-            //rtb.Multiline = true;
-            //rtb.SuspendLayout();
-            //rtb.BeginUpdate();
+            // first initialize
+            IEnumerable<FileInfo> files = myCommonMethods1.EnumerateFiles(path, EntryType.Rtf);
+            Int32 index = 0;
+            Int32 total = files.Count();
+            if (total <= 0) return;
 
-            IEnumerable<String> files = Directory.EnumerateFiles(path, "*.rtf");
-            long index = 0;
-            long total = files.LongCount();
+            // first create set top node
+            RegisterItem? setNode = null;
+            if (!ForceSetupNewEntrySilent(DateTime.Now, ref setNode, null, 0, true, NodeType.Set, importSetName, "", null))
+            {
+                MessageBox.Show("error, set node not created", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return; // error set node not created
+            }
 
-            // first we need to create a set node. we cannot import anything at all without a set node.
-            myNode? setNode = entryMethods.createSetNode(dbCtx, importSetName, DateTime.Now);
-
-            // import set node
-            byte[]? xamlbytes = null;
-            //entryMethods.DBCreateNode(dbCtx, ref setNode, "", xamlbytes, false, false, false, false, true, true);
+            // reload
+            setNode = Register.LoadSetupRegisterItem(dbCtx, setNode.Id, true, false, false, false, true, true);
 
             // this set's own context session work list
             List<myNode> setList = new List<myNode>();
 
-            foreach (String file in files)
+            foreach (FileInfo file in files)
             {
+                // 2nd load rtf from file
+                String? rtf = File.ReadAllText(file.FullName);
+
                 // notice: any tree node level in entire tree cannot have more than 1 nodes with exactly same name/title.
                 // this leads to destruction of nodes of same name and level while importing.
                 // so you must ensure there is no duplicate named/titled node in any tree level.
                 // if there is any duplicate node, you must give it a unique name/title which differs in all children of a tree node level.
                 // also, each and every entry which is to be imported, must have a unique name/title in it's filename.
 
+                // reload empty slots register
+                emptySlotsItem = Register.LoadSetupRegisterItem(dbCtx, emptySlotsItem.Id, false, false, false, false, true, true);
+
                 // auto create direct all nodes line by node names which exist in the file name itself.
-                // todo List<String> nodeNames = theJournalMethods.partitionEntryFileIntoNodes(file);
-                // todo List<myNode> nodesLine = theJournalMethods.initNodesLineTJNC(dbCtx, ref setList, ref nodeNames, setNode.chapter.Id);
-                // todo myNode? targetNode = nodesLine.Last();
+                List<String> nodeNames = theJournalMethods.partitionEntryFileIntoNodes(file.FullName);
+                List<myNode> nodesLine = theJournalMethods.initNodesLineTJNC(dbCtx, ref setList, ref nodeNames, setNode.node.chapter.Id, emptySlotsItem);
+                myNode? targetNode = nodesLine.Last();
 
-                // get rtf and update
-                // richtextbox automatically cleans and fixes a corrupted rtf and makes it valid.
-                // so we first load the imported rtf into a richtextbox object, then retrieve the cleaned and fixed
-                // rtf from it and only then store it in db.
-                String rtf = File.ReadAllText(file);
-                // todo rtf = theJournalMethods.fixTheJournalRtfEntry(rtf);
-                xamlEntry.dummy.Rtf = rtf;
-                //rtb.Rtf = rtf;
-                //rtf = rtb.Rtf;
-
-                // finally write body of the node in db
-                //entryMethods.DBUpdateNodeOFSDB(dbCtx, ref targetNode, xamlEntry.dummy.Rtf, xamlEntry.dummy.XamlBytes, true, true);
-
-                // update ui
-                if (loadOperationForm)
+                byte[]? xaml = null;
+                if (dbCtx.dbEntryType == EntryType.Xaml)
                 {
-                    formOperation.updateProgressBar(index, total);
-                    formOperation.updateFilesStatus(index, total);
+                    xamlEntry.dummy.Rtf = rtf;
+                    xaml = xamlEntry.dummy.XamlBytes;
                 }
 
-                // update
-                index++;
+                // finally write body of the node in db
+                entryMethods.DBUpdateNodeOFSDB(dbCtx, targetNode, rtf, xaml, true, false, false, EntryType.Default);
+
+                // update progress
+                formOperation.updateProgressBar(index, total);
+                formOperation.updateFilesStatus(index++, total);
+
             }
 
-            // finally update the db index in file.
-            //entryMethods.DBWriteIndexing(dbCtx);
-
-            // now first add set node
-            allNodes.Add(setNode);
-
-            // now add all set list into the global session work list
-            allNodes.AddRange(setList);
-
             this.Invoke(toggleForm, true);
+            formOperation.close();
 
-            if (loadOperationForm)
-                formOperation.close();
+            reload();
 
-            //todo mySystemNodes? systemNodes = null;
-            //reloadAll(true, true, true, true, ref systemNodes);
+            MessageBox.Show($"{index} entries imported of total {total} entries.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
         }
+
         public void doNewCustomNode(NodeType nodeType, bool root = false)
         {
             if (!dbCtx.isDBOpen())
