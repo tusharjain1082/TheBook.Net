@@ -21,7 +21,7 @@ TheBook.Net source code is available. both application and source code licensed 
 14. clone node to custom location.
 15. copy, paste, write, collect, organize texts. you can write myriads of books with myriads of chapters each in their own unique nodes/records with titles/names.
 16. sticky notes feature.
-17. form with tree view based design available.
+17. form with tree view based design navigation available.
 18. minimal optimized memory use.
 19. most bugs fixed. a ready open source software with complete source code.
 
