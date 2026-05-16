@@ -38,6 +38,7 @@ namespace DiaryJournal.Net
     public class OpenFSDBContext
     {
         public bool dbLoaded = false;
+        public bool idle = true;
         public String dbBaseParentPath = "";
         public String dbBasePath = "";
         public String dbEntryPath = "";

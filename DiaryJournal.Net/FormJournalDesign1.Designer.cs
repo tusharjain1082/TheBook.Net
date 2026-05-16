@@ -3653,7 +3653,7 @@
             // aboutToolStripMenuItem
             // 
             aboutToolStripMenuItem.Name = "aboutToolStripMenuItem";
-            aboutToolStripMenuItem.Size = new Size(180, 22);
+            aboutToolStripMenuItem.Size = new Size(107, 22);
             aboutToolStripMenuItem.Text = "About";
             aboutToolStripMenuItem.Click += aboutToolStripMenuItem_Click;
             // 
@@ -3736,6 +3736,7 @@
             Controls.Add(splitContainerH);
             Controls.Add(msJournal);
             Icon = (Icon)resources.GetObject("$this.Icon");
+            KeyPreview = true;
             MainMenuStrip = msJournal;
             Name = "FormJournalDesign1";
             StartPosition = FormStartPosition.CenterScreen;

@@ -98,13 +98,80 @@ namespace DiaryJournal.Net
         public __gotoEntryByAttributeDelegate gotoEntryByAttribute;
         public delegate bool __processSearchDelegate();
         public __processSearchDelegate processSearch;
-
+        public delegate TreeNode? __TVTreeAddItemDelegate(RegisterItem? item, TreeNode? tvParentNode);
+        public __TVTreeAddItemDelegate TVTreeAddItem;
+        public delegate void __configureStatusDelegate(RegisterItem? currentItem);
+        public __configureStatusDelegate configureStatus;
+        public delegate void __loadSelectedEntryDelegate(UInt32 id);
+        public __loadSelectedEntryDelegate loadSelectedEntry;
+        public delegate void __expandAllLineageDelegate(List<TreeNode?>? tvlineage);
+        public __expandAllLineageDelegate ExpandAllLineage;
 
         public FormJournalDesign1()
         {
             InitializeComponent();
         }
 
+        /*
+        private void FormJournal_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (!dbCtx.idle)
+            {
+                // meaning busy, do not process any menu shortcut key
+                e.Handled = true;
+                MessageBox.Show("test");
+                return;
+            }
+        }
+
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // If the form is busy, return true to indicate the key is "handled"
+            // and should not be processed further.
+            if (!dbCtx.idle)
+            {
+                // meaning busy, do not process any menu shortcut key
+                MessageBox.Show("test");
+                return true;
+            }
+
+            // idle
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+        */
+
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            //if (isProcessing && keyData == (Keys.Control | Keys.S))
+            // {
+            //     return true; // Consume the key and do nothing
+            //}
+            if (!dbCtx.idle)
+                return true;
+
+            return base.ProcessDialogKey(keyData);
+        }
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // List specific shortcuts to disable
+            /*
+            if (keyData == (Keys.Control | Keys.S))
+            {
+                return true; // Consume the key so the menu doesn't see it
+            }
+
+            // To disable ALL Alt-key combinations (menu mnemonics)
+            if ((keyData & Keys.Alt) == Keys.Alt)
+            {
+                return true;
+            }
+            */
+            if (!dbCtx.idle)
+                return true;
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
         private void FormJournalDesign1_Load(object sender, EventArgs e)
         {
             // Add a reference to the NuGet package System.Text.Encoding.CodePages for .Net core only
@@ -131,6 +198,7 @@ namespace DiaryJournal.Net
             formatting.formatLineSpacing(rtbEntry, 0.5);
             formatting.formatLineSpacing(rtbEntry.dummy, 0.5);
 
+            //this.KeyDown += FormJournal_KeyDown;
             rtbEntry.TextChanged += rtbEntry_TextChanged;
             rtbEntry.SelectionChanged += RtbEntry_SelectionChanged;
             tabControlJournal.Selected += TabControlJournal_Selected;
@@ -166,6 +234,10 @@ namespace DiaryJournal.Net
             updateSearchProgressPath = new __updateSearchProgressPathDelegate(__updateSearchProgressPath);
             gotoEntryByAttribute = new __gotoEntryByAttributeDelegate(__gotoEntryByAttribute);
             processSearch = new __processSearchDelegate(__processSearch);
+            TVTreeAddItem = new __TVTreeAddItemDelegate(__TVTreeAddItem);
+            configureStatus = new __configureStatusDelegate(__configureStatus);
+            loadSelectedEntry = new __loadSelectedEntryDelegate(__loadSelectedEntry);
+            ExpandAllLineage = new __expandAllLineageDelegate(__expandAllLineage);
 
             // now load config file and setup
             dbCtx.config = new myConfig();
@@ -224,8 +296,15 @@ namespace DiaryJournal.Net
             pdRtbEntry.PrintPage += new PrintPageEventHandler(printerRtb.printDoc_PrintPage);
             pdRtbEntry.EndPrint += new PrintEventHandler(printerRtb.printDoc_EndPrint);
 
-
+            foreach (ToolStripItem item in msJournal.Items)
+            {
+                foreach (ToolStripMenuItem menuitem in myCommonMethods1.GetAllItems(item))
+                {
+                    menuitem.Tag = menuitem.ShortcutKeys;
+                }
+            }
         }
+
         private void CmbFonts_DropDownClosed(object? sender, EventArgs e)
         {
             ToolStripComboBox comboBox = (ToolStripComboBox)sender;
@@ -645,7 +724,6 @@ namespace DiaryJournal.Net
             // validations
             if (parent.childrenCount >= Register.default_maxChildrenNodes)
             {
-                reloadPath("", false, parent);
                 MessageBox.Show($"error entry not created. maximum direct new children create/insert limit [{Register.default_maxChildrenNodes}] reached for/in this target parent.", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return;
             }
@@ -781,8 +859,8 @@ namespace DiaryJournal.Net
             // first save the entry
             saveEntry();
 
+            __toggleForm(false);
             // operations status form
-            this.Invoke(toggleForm, false);
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
@@ -846,8 +924,8 @@ namespace DiaryJournal.Net
 
             }
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // reset reload to root
             tvTree.SelectedNode = tvTree.Nodes.Find("0", false).FirstOrDefault();
@@ -863,7 +941,56 @@ namespace DiaryJournal.Net
 
         public void __toggleForm(bool toggle)
         {
-            this.Enabled = toggle;
+            // 1. Initial call to start the process
+            foreach (ToolStripItem item in msJournal.Items)
+            {
+
+                foreach (ToolStripMenuItem menuitem in myCommonMethods1.GetAllItems(item))
+                {
+                    menuitem.Enabled = toggle;
+                    //menuitem.Visible = toggle;
+                    if (toggle)
+                    {
+                        menuitem.ShortcutKeys = (Keys)menuitem.Tag;
+                    }
+                    else
+                    {
+                        menuitem.ShortcutKeys = Keys.None;
+                        //menuitem.Invalidate();
+                    }
+                }
+
+                item.Enabled = toggle;
+                //item.Visible = toggle;
+            }
+
+            //this.Update();
+
+            foreach (Control obj in this.Controls)
+                obj.Enabled = toggle;
+
+            if (toggle)
+            {
+                //this.Controls.Add(msJournal);
+                tvTree.EndUpdate();
+            }
+            else
+            {
+                //this.Controls.Remove(msJournal);
+                tvTree.BeginUpdate();
+            }
+
+
+            // Example: Processing messages during a heavy loop
+            // working
+            for (int i = 0; i < 10000; i++)
+            {
+                // Process all pending messages (repaints, clicks, etc.)
+                Application.DoEvents();
+            }
+            dbCtx.idle = toggle;
+            //msJournal.Enabled = toggle;
+            //this.Enabled = toggle;
         }
         public void __hideForm(bool toggle)
         {
@@ -997,7 +1124,7 @@ namespace DiaryJournal.Net
         }
 
 
-        public TreeNode? TVTreeAddItem(RegisterItem? item, TreeNode? tvParentNode)
+        public TreeNode? __TVTreeAddItem(RegisterItem? item, TreeNode? tvParentNode)
         {
             if (item == null) return null;
 
@@ -1128,6 +1255,7 @@ namespace DiaryJournal.Net
         }
         public bool reloadPath(String path, bool usePath, RegisterItem? item)
         {
+            
             // phase 1 - firstly get the registry node item
             List<RegisterItem>? registry = null;
 
@@ -1152,7 +1280,6 @@ namespace DiaryJournal.Net
             if (currentItem.nodeType == NodeType.EmptySlot) return false;
 
             // operations status form
-            this.Invoke(toggleForm, false);
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
@@ -1161,10 +1288,35 @@ namespace DiaryJournal.Net
             TreeNode? parent = null;
             foreach (RegisterItem? lineageitem in registry)
             {
-                parent = TVTreeAddItem(lineageitem, parent);
+                parent = (TreeNode?)this.Invoke(TVTreeAddItem, lineageitem, parent);
                 tvlineage.Add(parent);
             }
 
+            this.Invoke(configureStatus, currentItem);
+
+            // load all children in current path
+            reloadCurrentTVTreeNodeChildren();
+
+            this.Invoke(ExpandAllLineage, tvlineage);
+
+            // finally load the entry into rtb
+            this.Invoke(loadSelectedEntry, currentItem.Id);
+
+            formOperation.close();
+
+            return true;
+        }
+
+        public void __expandAllLineage(List<TreeNode?>? tvlineage)
+        {
+            // expand all lineage
+            //tvCurrentItem.EnsureVisible();
+            foreach (TreeNode? tvitem in tvlineage)
+                tvitem.Expand();
+
+        }
+        public void __configureStatus(RegisterItem? currentItem)
+        {
             // finally configure everything
             String rtf = "";
             byte[]? xaml = null;
@@ -1179,29 +1331,10 @@ namespace DiaryJournal.Net
             labelUnusedSlots.Text = $"unused slots:{emptySlots.ToString()}";
             List<RegisterItem>? ancestors = null;
             Register.Lineage(dbCtx, currentItem, ref ancestors, true);//, true);
-            path = Register.LineageFullPath(ancestors);//, currentItem);//, true);
+            String path = Register.LineageFullPath(ancestors);//, currentItem);//, true);
             textboxPath.Text = path;
-
             labelRWLock.Text = $"write-lock:{readOnly}";
-
-            TreeNode? tvCurrentItem = tvlineage.LastOrDefault();
-
-            // load all children in current path
-            reloadCurrentTVTreeNodeChildren();
-            // expand all lineage
-            //tvCurrentItem.EnsureVisible();
-            foreach (TreeNode? tvitem in tvlineage)
-                tvitem.Expand();
-
-            // finally load the entry into rtb
-            loadSelectedEntry(currentItem.Id);
-
-            this.Invoke(toggleForm, true);
-            formOperation.close();
-
-            return true;
         }
-
         public bool reloadCurrentTVTreeNodeChildren()
         {
             if (currentPathItem == null) return false;
@@ -1221,7 +1354,7 @@ namespace DiaryJournal.Net
             while (child != null)
             {
                 if (child.domainType != DomainType.HiddenCore && child.nodeType != NodeType.EmptySlot)
-                    TVTreeAddItem(child, tvItem);
+                    this.Invoke(TVTreeAddItem, child, tvItem);
 
                 child = currentPathItem.children.Next();
             }
@@ -1271,7 +1404,7 @@ namespace DiaryJournal.Net
 
         }
 
-        public void loadSelectedEntry(UInt32 id)
+        public void __loadSelectedEntry(UInt32 id)
         {
             timerSetRtbEntry.Tag = id;
             timerSetRtbEntry.Enabled = true;
@@ -1615,8 +1748,7 @@ namespace DiaryJournal.Net
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -1624,8 +1756,8 @@ namespace DiaryJournal.Net
             // export tree
             entryMethods.DBExportNodeTree(dbCtx, currentPathItem.Id, browseFolder.SelectedPath, entryType, formOperation);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             MessageBox.Show("node tree exported as documents.", "done", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -3178,11 +3310,6 @@ namespace DiaryJournal.Net
             // first save the entry
             saveEntry();
 
-            // operations status form
-            this.Invoke(toggleForm, false);
-            FormOperation? formOperation = null;
-            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
-
             // first initialize
             IEnumerable<FileInfo> files = myCommonMethods1.EnumerateFiles(path, EntryType.Rtf);
             Int32 index = 0;
@@ -3196,6 +3323,11 @@ namespace DiaryJournal.Net
                 MessageBox.Show("error, set node not created", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return; // error set node not created
             }
+
+            __toggleForm(false);
+            // operations status form
+            FormOperation? formOperation = null;
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
             // reload
             setNode = Register.LoadSetupRegisterItem(dbCtx, setNode.Id, true, false, false, false, true, true);
@@ -3238,8 +3370,8 @@ namespace DiaryJournal.Net
 
             }
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // reset reload to root
             tvTree.SelectedNode = tvTree.Nodes.Find("0", false).FirstOrDefault();
@@ -4061,6 +4193,8 @@ namespace DiaryJournal.Net
             // firstly save entry
             saveEntry();
 
+            __toggleForm(false);
+
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4075,8 +4209,8 @@ namespace DiaryJournal.Net
             {
                 formOperation.close();
                 MessageBox.Show("error occured!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
             }
+            __toggleForm(true);
         }
         private void toolStripMenuItem19_Click(object sender, EventArgs e)
         {
@@ -4087,6 +4221,8 @@ namespace DiaryJournal.Net
 
             // firstly save entry
             saveEntry();
+
+            __toggleForm(false);
 
             // operations status form
             FormOperation? formOperation = null;
@@ -4102,10 +4238,9 @@ namespace DiaryJournal.Net
             {
                 formOperation.close();
                 MessageBox.Show("error occured!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
             }
 
-            formOperation.close();
+            __toggleForm(true);
 
         }
 
@@ -4611,6 +4746,8 @@ namespace DiaryJournal.Net
             // firstly save entry
             saveEntry();
 
+            __toggleForm(false);
+
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4625,8 +4762,8 @@ namespace DiaryJournal.Net
             {
                 formOperation.close();
                 MessageBox.Show("error occured!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
             }
+            __toggleForm(true);
 
         }
         private void insertXamlFileIntoSelectionToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4650,7 +4787,7 @@ namespace DiaryJournal.Net
             // firstly save entry
             __saveEntry();
 
-            this.Invoke(toggleForm, false);
+            __toggleForm(false);
 
             // operations status form
             FormOperation? formOperation = null;
@@ -4660,8 +4797,8 @@ namespace DiaryJournal.Net
             UInt32 processed = 0;
             entryMethods.DBConvertOFSDB(dbCtx, toXaml, out processed, formOperation);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
         }
         private void toolStripMenuItem50_Click(object sender, EventArgs e)
@@ -4763,8 +4900,7 @@ namespace DiaryJournal.Net
                 "there is no need to purge anything! you can recycle and reuse the nodes! you have 8+ million slots!", "warning", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) != DialogResult.Yes)
                 return;
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4790,8 +4926,8 @@ namespace DiaryJournal.Net
             // finally reload path
             tvTree.SelectedNode = tvOldParent;
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
         }
 
@@ -4958,8 +5094,7 @@ namespace DiaryJournal.Net
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4967,8 +5102,8 @@ namespace DiaryJournal.Net
             // import
             entryMethods.DBImportDocumentsOFSDB(dbCtx, currentPathItem.Id, emptySlotsItem, browseFolder.SelectedPath, formOperation);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // reset reload to root
             tvTree.SelectedNode = tvTree.Nodes.Find("0", false).FirstOrDefault();
@@ -4993,7 +5128,7 @@ namespace DiaryJournal.Net
 
             List<RegisterItem> tops = new List<RegisterItem>();
 
-            this.Invoke(toggleForm, false);
+            __toggleForm(false);
 
             // operations status form
             FormOperation? formOperation = null;
@@ -5043,8 +5178,9 @@ namespace DiaryJournal.Net
             dbCtx.writeUsedSlotsFile();
             DatabaseConfig.toYamlFile(dbCtx.dbConfig, dbCtx.dbConfigFile);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+
+            __toggleForm(true);
 
         }
 
@@ -5063,7 +5199,15 @@ namespace DiaryJournal.Net
             // set current path item this selected node
             RegisterItem? item = Register.LoadSetupRegisterItem(dbCtx, UInt32.Parse(tvTree.SelectedNode.Name), false, false, false, false, true, true);
             currentPathItem = item;
+
+            // disable form and menu
+            __toggleForm(false);
+            
             reloadPath("", false, currentPathItem);
+
+            // enable form and menu
+            __toggleForm(true);
+
         }
 
     }

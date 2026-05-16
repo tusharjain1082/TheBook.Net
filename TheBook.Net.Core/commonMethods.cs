@@ -293,6 +293,22 @@ namespace DiaryJournal.Net
 
     public static class myCommonMethods1
     {
+        public static IEnumerable<ToolStripMenuItem> GetAllItems(this ToolStripItem item)
+        {
+            if (item is ToolStripMenuItem menuItem)
+            {
+                foreach (ToolStripItem subItem in menuItem.DropDownItems)
+                {
+                    if (subItem is ToolStripMenuItem subMenuItem)
+                    {
+                        yield return subMenuItem;
+                        foreach (var child in subMenuItem.GetAllItems())
+                            yield return child;
+                    }
+                }
+            }
+        }
+
         public static BitmapImage? ToBitmapImage(BitmapSource? bitmapSource)
         {
             //BitmapImage bitmapImage = bitmapSource as BitmapImage;

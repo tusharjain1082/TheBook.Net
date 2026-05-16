@@ -110,6 +110,38 @@ namespace DiaryJournal.Net
             InitializeComponent();
         }
 
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            //if (isProcessing && keyData == (Keys.Control | Keys.S))
+            // {
+            //     return true; // Consume the key and do nothing
+            //}
+            if (!dbCtx.idle)
+                return true;
+
+            return base.ProcessDialogKey(keyData);
+        }
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            // List specific shortcuts to disable
+            /*
+            if (keyData == (Keys.Control | Keys.S))
+            {
+                return true; // Consume the key so the menu doesn't see it
+            }
+
+            // To disable ALL Alt-key combinations (menu mnemonics)
+            if ((keyData & Keys.Alt) == Keys.Alt)
+            {
+                return true;
+            }
+            */
+            if (!dbCtx.idle)
+                return true;
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
         private void FormJournalDesign2_Load(object sender, EventArgs e)
         {
             // Add a reference to the NuGet package System.Text.Encoding.CodePages for .Net core only
@@ -233,6 +265,14 @@ namespace DiaryJournal.Net
 
             lvCurrentPath.KeyPress += new System.Windows.Forms.KeyPressEventHandler(lvCurrentPath_KeyPressed);
             lvChildren.KeyPress += new System.Windows.Forms.KeyPressEventHandler(lvChildren_KeyPressed);
+
+            foreach (ToolStripItem item in msJournal.Items)
+            {
+                foreach (ToolStripMenuItem menuitem in myCommonMethods1.GetAllItems(item))
+                {
+                    menuitem.Tag = menuitem.ShortcutKeys;
+                }
+            }
 
         }
         private void CmbFonts_DropDownClosed(object? sender, EventArgs e)
@@ -749,8 +789,8 @@ namespace DiaryJournal.Net
             // first save the entry
             saveEntry();
 
+            __toggleForm(false);
             // operations status form
-            this.Invoke(toggleForm, false);
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
@@ -814,8 +854,8 @@ namespace DiaryJournal.Net
 
             }
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             reload();
 
@@ -827,13 +867,6 @@ namespace DiaryJournal.Net
             MessageBox.Show(this, text, title, buttons, icon);
         }
 
-        public void __toggleForm(bool toggle)
-        {
-            this.Enabled = toggle;
-            //this.Show();
-            //this.BringToFront();
-            //this.Focus();
-        }
         public void __hideForm(bool toggle)
         {
             if (toggle)
@@ -901,6 +934,7 @@ namespace DiaryJournal.Net
         public void reload()
         {
             reloadPath(textboxPath.Text, true, null);
+
         }
 
         public void LVCurrentPathAddItem(RegisterItem? registryItem, int index, String name)
@@ -926,6 +960,60 @@ namespace DiaryJournal.Net
             item.Tag = registryItem.Id;//registryItem;
             item.SubItems.Add(name);
             lv.Items.Add(item);
+        }
+
+        public void __toggleForm(bool toggle)
+        {
+            // 1. Initial call to start the process
+            foreach (ToolStripItem item in msJournal.Items)
+            {
+
+                foreach (ToolStripMenuItem menuitem in myCommonMethods1.GetAllItems(item))
+                {
+                    menuitem.Enabled = toggle;
+                    //menuitem.Visible = toggle;
+                    if (toggle)
+                    {
+                        menuitem.ShortcutKeys = (Keys)menuitem.Tag;
+                    }
+                    else
+                    {
+                        menuitem.ShortcutKeys = Keys.None;
+                        //menuitem.Invalidate();
+                    }
+                }
+
+                item.Enabled = toggle;
+                //item.Visible = toggle;
+            }
+
+            //this.Update();
+
+            foreach (Control obj in this.Controls)
+                obj.Enabled = toggle;
+
+            if (toggle)
+            {
+                //this.Controls.Add(msJournal);
+                lvCurrentPath.EndUpdate();
+            }
+            else
+            {
+                //this.Controls.Remove(msJournal);
+                lvCurrentPath.BeginUpdate();
+            }
+
+
+            // Example: Processing messages during a heavy loop
+            // working
+            for (int i = 0; i < 10000; i++)
+            {
+                // Process all pending messages (repaints, clicks, etc.)
+                Application.DoEvents();
+            }
+            dbCtx.idle = toggle;
+            //msJournal.Enabled = toggle;
+            //this.Enabled = toggle;
         }
 
         public bool reloadPath(String path, bool usePath, RegisterItem? item)
@@ -964,7 +1052,10 @@ namespace DiaryJournal.Net
             // all mandatory validations
             if (currentItem.nodeType == NodeType.EmptySlot) return false;
 
-            lvCurrentPath.BeginUpdate();
+            __toggleForm(false);
+            // operations status form
+            FormOperation? formOperation = null;
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
             LVCurrentPathAddItem(rootItem, dirIndex++, @"\");
             LVCurrentPathAddItem(currentItem, dirIndex++, ".");
@@ -1023,8 +1114,8 @@ namespace DiaryJournal.Net
             // finally load the entry into rtb
             loadSelectedEntry(currentItem.Id);
 
-            //this.Enabled = true;
-            //formOperation.close();
+            formOperation.close();
+            __toggleForm(true);
             return true;
         }
 
@@ -1403,8 +1494,7 @@ namespace DiaryJournal.Net
             // firstly save entry
             __saveEntry();
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -1415,8 +1505,8 @@ namespace DiaryJournal.Net
                 entryMethods.DBExportNodeTree(dbCtx, (UInt32)lvItem.Tag, browseFolder.SelectedPath, entryType, formOperation);
             }
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // update form
             reloadPath("", false, currentPathItem);
@@ -2879,11 +2969,6 @@ namespace DiaryJournal.Net
             // first save the entry
             saveEntry();
 
-            // operations status form
-            this.Invoke(toggleForm, false);
-            FormOperation? formOperation = null;
-            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
-
             // first initialize
             IEnumerable<FileInfo> files = myCommonMethods1.EnumerateFiles(path, EntryType.Rtf);
             Int32 index = 0;
@@ -2897,6 +2982,11 @@ namespace DiaryJournal.Net
                 MessageBox.Show("error, set node not created", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return; // error set node not created
             }
+
+            __toggleForm(false);
+            // operations status form
+            FormOperation? formOperation = null;
+            formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
 
             // reload
             setNode = Register.LoadSetupRegisterItem(dbCtx, setNode.Id, true, false, false, false, true, true);
@@ -2939,8 +3029,8 @@ namespace DiaryJournal.Net
 
             }
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             reload();
 
@@ -3722,6 +3812,8 @@ namespace DiaryJournal.Net
             // firstly save entry
             saveEntry();
 
+            __toggleForm(false);
+
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -3736,8 +3828,9 @@ namespace DiaryJournal.Net
             {
                 formOperation.close();
                 MessageBox.Show("error occured!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
             }
+            __toggleForm(true);
+
         }
         private void toolStripMenuItem19_Click(object sender, EventArgs e)
         {
@@ -3748,6 +3841,8 @@ namespace DiaryJournal.Net
 
             // firstly save entry
             saveEntry();
+
+            __toggleForm(false);
 
             // operations status form
             FormOperation? formOperation = null;
@@ -3766,8 +3861,7 @@ namespace DiaryJournal.Net
                 return;
             }
 
-            formOperation.close();
-
+            __toggleForm(true);
         }
 
         private void insertACodeToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4275,6 +4369,8 @@ namespace DiaryJournal.Net
             // firstly save entry
             saveEntry();
 
+            __toggleForm(false);
+
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4289,8 +4385,8 @@ namespace DiaryJournal.Net
             {
                 formOperation.close();
                 MessageBox.Show("error occured!", "error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return;
             }
+            __toggleForm(true);
 
         }
         private void insertXamlFileIntoSelectionToolStripMenuItem_Click(object sender, EventArgs e)
@@ -4314,7 +4410,7 @@ namespace DiaryJournal.Net
             // firstly save entry
             __saveEntry();
 
-            this.Invoke(toggleForm, false);
+            __toggleForm(false);
 
             // operations status form
             FormOperation? formOperation = null;
@@ -4324,8 +4420,8 @@ namespace DiaryJournal.Net
             UInt32 processed = 0;
             entryMethods.DBConvertOFSDB(dbCtx, toXaml, out processed, formOperation);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
         }
         private void toolStripMenuItem50_Click(object sender, EventArgs e)
@@ -4424,8 +4520,7 @@ namespace DiaryJournal.Net
             // firstly save entry
             __saveEntry();
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4435,8 +4530,8 @@ namespace DiaryJournal.Net
             RegisterItem? parent = Register.LoadSetupRegisterItem(dbCtx, item.parentId, false, false, false, false, true, true);
             item.tree.Delete(item, emptySlotsItem);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // reload to correct sync
             reloadPath("", false, parent);
@@ -4600,8 +4695,7 @@ namespace DiaryJournal.Net
             if (browseFolder.ShowDialog() != DialogResult.OK)
                 return;
 
-            this.Invoke(toggleForm, false);
-
+            __toggleForm(false);
             // operations status form
             FormOperation? formOperation = null;
             formOperation = FormOperation.showForm(this, "please wait. doing operation...", 0, 100, 0, 0);
@@ -4609,8 +4703,8 @@ namespace DiaryJournal.Net
             // import
             entryMethods.DBImportDocumentsOFSDB(dbCtx, currentPathItem.Id, emptySlotsItem, browseFolder.SelectedPath, formOperation);
 
-            this.Invoke(toggleForm, true);
             formOperation.close();
+            __toggleForm(true);
 
             // update form
             reloadPath("", false, currentPathItem);

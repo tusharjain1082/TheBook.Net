@@ -4016,6 +4016,7 @@
             Controls.Add(splitContainerH);
             Controls.Add(msJournal);
             Icon = (Icon)resources.GetObject("$this.Icon");
+            KeyPreview = true;
             MainMenuStrip = msJournal;
             Name = "FormJournalDesign2";
             StartPosition = FormStartPosition.CenterScreen;

@@ -83,6 +83,12 @@
     </EmbeddedResource>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="instructions on importing entries from the journal 7 and 8 software.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 	<Target Name="PreBuild" BeforeTargets="PreBuildEvent">
 		<Exec Command="echo %25date%25 &gt; &quot;$(ProjectDir)\Resources\BuildDate.txt&quot;&#xD;&#xA;echo %25time%25 &gt; &quot;$(ProjectDir)\Resources\BuildTime.txt&quot;&#xD;&#xA;echo $(CurrentDateTime) &gt; &quot;$(ProjectDir)\Resources\BuildDateTime.txt&quot;" />
 	</Target>
