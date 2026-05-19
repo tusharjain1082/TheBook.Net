@@ -43,3 +43,4 @@ you can download precompiled portable self contained application in releases sec
 
 ![Alt text](/screenshot2.jpeg?raw=false "TheBook.Net screenshot 2")
 
+![Alt text](/screenshot3.jpeg?raw=false "TheBook.Net screenshot 3")

@@ -13,10 +13,12 @@ using System.Threading.Tasks;
 /*
  * 
  * original sole developer and inventor: Tushar Jain
- * status: relic
- * Name/Title: Mother of Databases - The Sacred Register
+ * status: relic, because i did not find this very rare and simple code anywhere and so i invented it all myself with my thoughts. so i consider it relic or God's gift to me.
+ * Name/Title: Mother of Databases - The Sacred Register, i consider this code sacred to myself because it is very rare not to be found anywhere and it empowers my source code and 
+ * application, i myself use this application for my writing and diary needs i keep my journal in this application along with source code so everything invented my me alone 
+ * so everything is sacred to me precious to my heart as if God gifted it to me. i keep it open source at your hands if you need it. thanks.
  * I created it for my Projects: Tushar Jain's TheBook.Net and DiaryJournal.Net
- * Copyright(c) Tushar Jain
+ * Copyright(c) 2021 - 2027 Tushar Jain
  * 
  * */
 
